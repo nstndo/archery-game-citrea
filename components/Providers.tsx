@@ -13,7 +13,7 @@ export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
   const [config] = useState(() =>
     createConfig({
-      chains: [citrea],
+      chains: [base],
       connectors: [
         farcasterMiniApp(), // First for Farcaster auto-connect
         coinbaseWallet({
@@ -43,9 +43,9 @@ export function Providers({ children }: { children: ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <OnchainKitProvider
           apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}
-          chain={citrea}
+          chain={base}
         >
-          <MiniKitProvider chain={citrea}>
+          <MiniKitProvider chain={base}>
             {children}
           </MiniKitProvider>
         </OnchainKitProvider>
