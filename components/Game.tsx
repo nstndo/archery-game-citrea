@@ -736,7 +736,7 @@ export default function Game() {
             <div className={`text-sm font-bold font-orbitron ${currentTheme === 'dark' ? 'text-white' : 'text-[#000000]'}`}>
               LEVEL {level}
             </div>
-            <div className={`text-xs font-bold font-orbitron ${currentTheme === 'dark' ? 'text-white/70' : 'text-[#0000ff]/70'}`}>
+            <div className={`text-xs font-bold font-orbitron ${currentTheme === 'dark' ? 'text-white/70' : 'text-[#f17c19]/70'}`}>
               {arrowsLeft} ARROWS
             </div>
           </div>
@@ -786,21 +786,21 @@ export default function Game() {
     <p className="text-center mb-4 opacity-70 font-orbitron">You hit another arrow!</p>
     <div className="text-center mb-6 p-6 rounded-2xl border border-white/2">
       <div className="text-sm opacity-70 mb-1 font-orbitron">LEVEL REACHED</div>
-      <div className="text-6xl font-black font-orbitron text-[#0000ff]">{level}</div>
+      <div className="text-6xl font-black font-orbitron text-[#f17c19]">{level}</div>
     </div>
     
     <div className="flex gap-3 mb-3">
       <button
         onClick={handleMint}
         disabled={isPending || isConfirming || isConfirmed}
-        className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase tracking-widest bg-[#0000ff] text-white shadow-lg shadow-blue-600/30 active:scale-98 transition-transform disabled:opacity-50"
+        className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase tracking-widest bg-[#f17c19] text-white shadow-lg shadow-blue-600/30 active:scale-98 transition-transform disabled:opacity-50"
       >
         {isPending ? 'CONFIRMING...' : isConfirming ? 'MINTING...' : isConfirmed ? 'MINTED!' : 'MINT NFT'}
       </button>
       
       <button
         onClick={handleShare}
-        className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase tracking-widest bg-[#0000dd] text-white shadow-lg shadow-blue-600/30 active:scale-98 transition-transform"
+        className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase tracking-widest bg-[#f17c19] text-white shadow-lg shadow-blue-600/30 active:scale-98 transition-transform"
       >
         SHARE
       </button>
@@ -821,7 +821,7 @@ export default function Game() {
           <p className="text-center mb-6 opacity-70 font-orbitron">Great shot! Ready for the next challenge?</p>
           <button
             onClick={() => resetLevel(level + 1)}
-            className="w-full p-4 rounded-2xl font-bold font-orbitron text-base uppercase tracking-widest bg-[#0000ff] text-white shadow-lg shadow-blue-600/30 active:scale-98 transition-transform"
+            className="w-full p-4 rounded-2xl font-bold font-orbitron text-base uppercase tracking-widest bg-[#f17c19] text-white shadow-lg shadow-blue-600/30 active:scale-98 transition-transform"
           >
             NEXT LEVEL
           </button>
