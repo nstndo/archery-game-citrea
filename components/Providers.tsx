@@ -13,20 +13,20 @@ export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
   const [config] = useState(() =>
     createConfig({
-      chains: [base],
+      chains: [citrea],
       connectors: [
         farcasterMiniApp(), // First for Farcaster auto-connect
         coinbaseWallet({
-          appName: 'Base Archery',
+          appName: 'Citrea Archery',
           preference: 'all', // Single connector for both Smart Wallet and regular wallet
         }),
         walletConnect({
           projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '0',
           metadata: {
-            name: 'Base Archery',
-            description: 'Become a Base Legend',
-            url: 'https://base-archery-game.vercel.app',
-            icons: ['https://base-archery-game.vercel.app/logo.png'],
+            name: 'Citrea Archery',
+            description: 'Become a Citrea Legend',
+            url: 'https://citrea-archery-game.vercel.app',
+            icons: ['https://citrea-archery-game.vercel.app/logo.png'],
           },
           showQrModal: true,
         }),
@@ -43,9 +43,9 @@ export function Providers({ children }: { children: ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <OnchainKitProvider
           apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}
-          chain={base}
+          chain={citrea}
         >
-          <MiniKitProvider chain={base}>
+          <MiniKitProvider chain={citrea}>
             {children}
           </MiniKitProvider>
         </OnchainKitProvider>

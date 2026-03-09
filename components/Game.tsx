@@ -138,11 +138,11 @@ export default function Game() {
       return img;
     };
 
-    assets.current.target = loadImg('https://base-archery-game.vercel.app/base-logo.webp');
-    assets.current.shardB = loadImg('https://base-archery-game.vercel.app/b-white.webp');
-    assets.current.shardAse = loadImg('https://base-archery-game.vercel.app/ase-white.webp');
-    assets.current.shardB_Blue = loadImg('https://base-archery-game.vercel.app/b-blue.webp');
-    assets.current.shardAse_Blue = loadImg('https://base-archery-game.vercel.app/ase-blue.webp');
+    assets.current.target = loadImg('https://citrea-archery-game.vercel.app/citrus.webp');
+    assets.current.shardB = loadImg('https://citrea-archery-game.vercel.app/b-white.webp');
+    assets.current.shardAse = loadImg('https://citrea-archery-game.vercel.app/ase-white.webp');
+    assets.current.shardB_Blue = loadImg('https://citrea-archery-game.vercel.app/b-blue.webp');
+    assets.current.shardAse_Blue = loadImg('https://citrea-archery-game.vercel.app/ase-blue.webp');
   }, []);
 
   useEffect(() => {

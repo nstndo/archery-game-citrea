@@ -1,6 +1,6 @@
-# Base Archery Game
+# Citrea Archery Game
 
 Web game with:
-- Wallet login via Base
+- Wallet login via Citrea
 - Score-based gameplay
-- NFT minting on Base chain
+- NFT minting on Citrea chain
