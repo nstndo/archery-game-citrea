@@ -276,9 +276,9 @@ export default function Game() {
 
     const drawArrow = (x: number, y: number, angle?: number, isStuck = false) => {
       ctx.save();
-      const color = currentTheme === 'dark' ? '#ffffff' : '#0000ff';
+      const color = currentTheme === 'dark' ? '#ffffff' : '#f17c19';
       ctx.fillStyle = color;
-      ctx.shadowColor = currentTheme === 'dark' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,255,0.4)';
+      ctx.shadowColor = currentTheme === 'dark' ? 'rgba(255,255,255,0.6)' : 'rgb(248, 99, 6)';
       ctx.shadowBlur = 8;
 
       if (isStuck) {
@@ -402,7 +402,7 @@ export default function Game() {
       } else {
         ctx.beginPath();
         ctx.arc(0, 0, targetRadius, 0, Math.PI * 2);
-        ctx.fillStyle = '#0000ff';
+        ctx.fillStyle = '#f17c19';
         ctx.fill();
       }
       ctx.restore();
@@ -608,8 +608,8 @@ export default function Game() {
   };
 
   const handleShare = async () => {
-    const text = `I just reached Level ${level} in Base Archery! 🎯\n\nCan you beat my score?`;
-    const url = 'https://base-archery-game.vercel.app';
+    const text = `I just reached Level ${level} in Citrea Archery! 🎯\n\nCan you beat my score?`;
+    const url = 'https://citrea-archery-game.vercel.app';
 
     if (isFrameReady && context) {
       try {
@@ -710,7 +710,7 @@ export default function Game() {
         {/* Top Bar */}
         <div className={`top-bar flex justify-between items-center px-4 py-4 pt-[calc(15px+env(safe-area-inset-top))] backdrop-blur-md border-b transition-colors duration-300 flex-shrink-0 pointer-events-auto ${currentTheme === 'light' ? 'bg-white/85 border-blue-600/10' : 'bg-[#000020]/85 border-white/10'}`}>
           <div className={`font-orbitron font-black text-lg flex items-center gap-2 uppercase tracking-wide flex-shrink-0 ${currentTheme === 'dark' ? 'text-white' : 'text-black'}`}>
-            BASE <span className="text-[#0000ff]">ARCHERY</span>
+            CITREA <span className="text-[#f17c19]">ARCHERY</span>
           </div>
           <div className="flex gap-2 items-center flex-shrink-0 min-w-0">
             <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-500/10 transition-colors flex items-center justify-center">
@@ -843,7 +843,7 @@ export default function Game() {
         </div>
         <div>
           <h3 className="font-bold mb-1">WHAT ARE NFTS?</h3>
-          <p className="text-sm opacity-70">Your high score can be minted as a unique NFT on the Base blockchain. Free. Just gas fee.</p>
+          <p className="text-sm opacity-70">Your high score can be minted as a unique NFT on the Citrea Mainnet. Free. Just gas fee.</p>
         </div>
         <div>
           <h3 className="font-bold mb-1">IS IT SAFE?</h3>
