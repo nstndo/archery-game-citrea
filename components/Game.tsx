@@ -116,6 +116,7 @@ export default function Game() {
         abi: CONTRACT_ABI,
         functionName: 'mintScore',
         args: [BigInt(level)],
+        chainId: citrea.id,
       });
     }
   }, [chainId, shouldMint, isConnected, level, writeContract]);
@@ -333,26 +334,38 @@ export default function Game() {
   };
 
   const handleMint = async () => {
-    if (!isConnected) { setShowWalletModal(true); return; }
+    if (!isConnected) { 
+      setShowWalletModal(true); 
+      return; 
+    }
 
+    // Проверяем текущую сеть через wagmi и актуальный window.ethereum
     if (chainId !== citrea.id) {
       try { 
+        // Запрашиваем смену сети
         await switchChain({ chainId: citrea.id }); 
+        // Активируем флаг для useEffect
         setShouldMint(true); 
       }
       catch (e) { 
-        alert("Please switch to Citrea network manually."); 
+        console.error("Switch chain error:", e);
+        alert("Please switch to Citrea Mainnet in your wallet."); 
       }
       return;
     }
 
-    writeContract({ 
-      address: CONTRACT_ADDRESS, 
-      abi: CONTRACT_ABI, 
-      functionName: 'mintScore', 
-      args: [BigInt(level)],
-      chainId: citrea.id
-    });
+    // Если мы уже в нужной сети, вызываем минт напрямую
+    try {
+      writeContract({ 
+        address: CONTRACT_ADDRESS, 
+        abi: CONTRACT_ABI, 
+        functionName: 'mintScore', 
+        args: [BigInt(level)],
+        chainId: citrea.id // Обязательно для корректного вызова в нужной сети
+      });
+    } catch (error) {
+      console.error("Mint execution failed:", error);
+    }
   };
 
   const handleShare = async () => {
