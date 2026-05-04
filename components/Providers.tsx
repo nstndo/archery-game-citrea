@@ -1,24 +1,32 @@
 'use client';
 
-import { OnchainKitProvider } from '@coinbase/onchainkit';
-import { MiniKitProvider } from '@coinbase/onchainkit/minikit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { base } from 'viem/chains';
 import { WagmiProvider, createConfig, http } from 'wagmi';
 import { coinbaseWallet, walletConnect, injected } from 'wagmi/connectors';
-import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector';
 import { type ReactNode, useState } from 'react';
+import { defineChain } from 'viem';
+
+// Определяем сеть Citrea
+const citrea = defineChain({
+  id: 4114,
+  name: 'Citrea Mainnet',
+  nativeCurrency: { name: 'cBTC', symbol: 'cBTC', decimals: 18 },
+  rpcUrls: {
+    default: { http: ['https://rpc.mainnet.citrea.xyz'] },
+  },
+  blockExplorers: {
+    default: { name: 'Explorer', url: 'https://explorer.mainnet.citrea.xyz' },
+  },
+});
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
   const [config] = useState(() =>
     createConfig({
-      chains: [base],
+      chains: [citrea],
       connectors: [
-        farcasterMiniApp(), // First for Farcaster auto-connect
         coinbaseWallet({
           appName: 'Citrea Archery',
-          preference: 'all', // Single connector for both Smart Wallet and regular wallet
         }),
         walletConnect({
           projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '0',
@@ -26,14 +34,13 @@ export function Providers({ children }: { children: ReactNode }) {
             name: 'Citrea Archery',
             description: 'Become a Citrea Legend',
             url: 'https://citrea-archery-game.vercel.app',
-            icons: ['https://citrea-archery-game.vercel.app/logo.png'],
+            icons: ['https://citrea-archery-game.vercel.app/favicon.svg'],
           },
-          showQrModal: true,
         }),
         injected(),
       ],
       transports: {
-        [base.id]: http(),
+        [citrea.id]: http(),
       },
     })
   );
@@ -41,14 +48,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <OnchainKitProvider
-          apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}
-          chain={base}
-        >
-          <MiniKitProvider chain={base}>
-            {children}
-          </MiniKitProvider>
-        </OnchainKitProvider>
+        {children}
       </QueryClientProvider>
     </WagmiProvider>
   );
