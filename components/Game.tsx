@@ -504,7 +504,7 @@ export default function Game() {
               <div className="space-y-4 mb-6 font-orbitron">
                 <div><h3 className="font-bold mb-1 uppercase">How to play?</h3><p className="text-sm opacity-70">Tap anywhere to shoot. Fill the target without hitting other arrows.</p></div>
                 <div><h3 className="font-bold mb-1 uppercase">What are NFTs?</h3><p className="text-sm opacity-70">Your high score can be minted as a unique NFT on the Citrea Mainnet. Free. Just gas fee.</p></div>
-                <div><h3 className="font-bold mb-1 uppercase">Is it safe?</h3><p className="text-sm opacity-70">I did my best! The verified <a href={`${EXPLORER_URL}/address/${CONTRACT_ADDRESS}`} target="_blank" className="text-[#f17c19]">contract address</a> is available for viewing on Citrea explorer.</p></div>
+                <div><h3 className="font-bold mb-1 uppercase">Is it safe?</h3><p className="text-sm opacity-70">I did my best! The verified contract address is available for viewing on <a href="https://repo.sourcify.dev/4114/0x7a98360c0Eb052a2B3A98b06a6cd4069582ff84D" target="_blank" className="text-[#f17c19]">Sourcify</a> and <a href="https://explorer.mainnet.citrea.xyz/address/0x7a98360c0Eb052a2B3A98b06a6cd4069582ff84D" target="_blank" className="text-[#f17c19]">Citrea explorer</a>.</p></div>
               </div>
               <button onClick={() => { setShowFaq(false); gameState.current = 'playing'; }} className="w-full p-4 rounded-xl font-bold font-orbitron bg-[#f17c19] text-white uppercase">Close</button>
             </div>
