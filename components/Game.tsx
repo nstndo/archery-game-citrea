@@ -403,22 +403,37 @@ export default function Game() {
         </div>
 
         <div className="flex-1 pointer-events-auto flex items-center justify-center p-4">
-          {showWalletModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className={`modal-card w-full max-w-md p-6 rounded-3xl shadow-2xl ${currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
-                <h2 className="text-2xl font-black font-orbitron text-center mb-4 uppercase">CONNECT WALLET</h2>
-                <div className="space-y-3">
-                  {connectors.filter(c => ['coinbaseWalletSDK', 'walletConnect', 'injected'].includes(c.id)).map((c) => (
-                    <button key={c.id} onClick={() => { connect({ connector: c }); setShowWalletModal(false); }} className={`w-full p-4 rounded-xl font-bold font-orbitron transition-all ${currentTheme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-100 hover:bg-gray-200'}`}>
-                      {c.name}
-                    </button>
-                  ))}
-                </div>
-                <button onClick={() => setShowWalletModal(false)} className="w-full mt-4 p-3 rounded-xl font-bold font-orbitron bg-[#f17c19] text-white">Cancel</button>
-              </div>
-            </div>
-          )}
-
+{showWalletModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className={`modal-card w-full max-w-md p-6 rounded-3xl shadow-2xl ${currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
+      <h2 className="text-2xl font-black font-orbitron text-center mb-4 uppercase">CONNECT WALLET</h2>
+      <div className="space-y-3">
+        {connectors.map((connector) => (
+          <button
+            key={connector.id}
+            onClick={() => {
+              connect({ connector });
+              setShowWalletModal(false);
+            }}
+            className={`w-full p-4 rounded-xl font-bold font-orbitron transition-all ${
+              currentTheme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-100 hover:bg-gray-200'
+            }`}
+          >
+            {connector.id === 'injected' 
+              ? 'Browser Wallet (MetaMask, etc.)' 
+              : connector.name}
+          </button>
+        ))}
+      </div>
+      <button
+        onClick={() => setShowWalletModal(false)}
+        className="w-full mt-4 p-3 rounded-xl font-bold font-orbitron bg-[#f17c19] text-white"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
           {!showLeaderboard && !showFaq && isGameOver && (
             <div className={`modal-card w-full max-w-md p-6 rounded-3xl shadow-2xl ${currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
               <h2 className="text-3xl font-black font-orbitron text-center mb-2">GAME OVER</h2>
