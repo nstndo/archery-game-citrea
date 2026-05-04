@@ -2,11 +2,10 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider, createConfig, http } from 'wagmi';
-import { coinbaseWallet, walletConnect, injected } from 'wagmi/connectors';
+import { walletConnect, injected } from 'wagmi/connectors';
 import { type ReactNode, useState } from 'react';
 import { defineChain } from 'viem';
 
-// Определяем сеть Citrea
 const citrea = defineChain({
   id: 4114,
   name: 'Citrea Mainnet',
@@ -25,9 +24,6 @@ export function Providers({ children }: { children: ReactNode }) {
     createConfig({
       chains: [citrea],
       connectors: [
-        coinbaseWallet({
-          appName: 'Citrea Archery',
-        }),
         walletConnect({
           projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '0',
           metadata: {
