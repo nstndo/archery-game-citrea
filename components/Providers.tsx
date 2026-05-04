@@ -36,7 +36,7 @@ export function Providers({ children }: { children: ReactNode }) {
         injected(),
       ],
       transports: {
-        [citrea.id]: http(),
+        [citrea.id]: http('https://rpc.mainnet.citrea.xyz'),
       },
     })
   );
