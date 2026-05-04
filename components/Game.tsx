@@ -339,12 +339,9 @@ export default function Game() {
       return; 
     }
 
-    // Проверяем текущую сеть через wagmi и актуальный window.ethereum
     if (chainId !== citrea.id) {
       try { 
-        // Запрашиваем смену сети
         await switchChain({ chainId: citrea.id }); 
-        // Активируем флаг для useEffect
         setShouldMint(true); 
       }
       catch (e) { 
@@ -354,14 +351,13 @@ export default function Game() {
       return;
     }
 
-    // Если мы уже в нужной сети, вызываем минт напрямую
     try {
       writeContract({ 
         address: CONTRACT_ADDRESS, 
         abi: CONTRACT_ABI, 
         functionName: 'mintScore', 
         args: [BigInt(level)],
-        chainId: citrea.id // Обязательно для корректного вызова в нужной сети
+        chainId: citrea.id
       });
     } catch (error) {
       console.error("Mint execution failed:", error);
