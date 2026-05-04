@@ -108,18 +108,18 @@ export default function Game() {
     assets.current.shardAse_Blue = loadImg('https://citrea-archery-game.vercel.app/slice2.webp');
   }, []);
 
-  useEffect(() => {
-    if (shouldMint && chainId === citrea.id && isConnected) {
-      setShouldMint(false);
-      writeContract({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        functionName: 'mintScore',
-        args: [BigInt(level)],
-        chainId: citrea.id,
-      });
-    }
-  }, [chainId, shouldMint, isConnected, level, writeContract]);
+useEffect(() => {
+  if (shouldMint && chainId === citrea.id && isConnected) {
+    setShouldMint(false);
+    writeContract({
+      address: CONTRACT_ADDRESS,
+      abi: CONTRACT_ABI,
+      functionName: 'mintScore',
+      args: [BigInt(level)],
+      chain: citrea,
+    });
+  }
+}, [chainId, shouldMint, isConnected, level, writeContract]);
 
   const fetchLeaderboard = async () => {
     if (!publicClient) return;
@@ -333,36 +333,36 @@ export default function Game() {
     }, 100);
   };
 
-  const handleMint = async () => {
-    if (!isConnected) { 
-      setShowWalletModal(true); 
-      return; 
-    }
+const handleMint = async () => {
+  if (!isConnected) { 
+    setShowWalletModal(true); 
+    return; 
+  }
 
-    if (chainId !== citrea.id) {
-      try { 
-        await switchChain({ chainId: citrea.id }); 
-        setShouldMint(true); 
-      }
-      catch (e) { 
-        console.error("Switch chain error:", e);
-        alert("Please switch to Citrea Mainnet in your wallet."); 
-      }
-      return;
+  if (chainId !== citrea.id) {
+    try { 
+      await switchChain({ chainId: citrea.id }); 
+      setShouldMint(true); 
     }
+    catch (e) { 
+      console.error("Switch chain error:", e);
+      alert("Please switch your wallet to Citrea Mainnet manually."); 
+    }
+    return;
+  }
 
-    try {
-      writeContract({ 
-        address: CONTRACT_ADDRESS, 
-        abi: CONTRACT_ABI, 
-        functionName: 'mintScore', 
-        args: [BigInt(level)],
-        chainId: citrea.id
-      });
-    } catch (error) {
-      console.error("Mint execution failed:", error);
-    }
-  };
+  try {
+    writeContract({ 
+      address: CONTRACT_ADDRESS, 
+      abi: CONTRACT_ABI, 
+      functionName: 'mintScore', 
+      args: [BigInt(level)],
+      chain: citrea, 
+    });
+  } catch (error) {
+    console.error("Mint failed:", error);
+  }
+};
 
   const handleShare = async () => {
     const text = `I just reached Level ${level} in Citrea Archery! 🎯\n\nCan you beat my score?`;
