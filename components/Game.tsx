@@ -345,11 +345,22 @@ export default function Game() {
   const handleShare = async () => {
     const text = `I just reached Level ${level} in Citrea Archery! 🎯\n\nCan you beat my score?`;
     const url = 'https://citrea-archery-game.vercel.app';
+    const xUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+
     if (navigator.share) {
-      navigator.share({ title: 'Citrea Archery', text, url }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(`${text}\n${url}`); alert('Link copied!');
+      try {
+        await navigator.share({
+          title: 'Citrea Archery',
+          text: text,
+          url: url
+        });
+        return; 
+      } catch (err) {
+        console.log('System share cancelled or failed', err);
+      }
     }
+
+    window.open(xUrl, '_blank', 'noopener,noreferrer');
   };
 
   const renderProfile = () => {
