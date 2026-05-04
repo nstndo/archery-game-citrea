@@ -334,12 +334,25 @@ export default function Game() {
 
   const handleMint = async () => {
     if (!isConnected) { setShowWalletModal(true); return; }
+
     if (chainId !== citrea.id) {
-      try { await switchChain({ chainId: citrea.id }); setShouldMint(true); }
-      catch (e) { alert("Please switch to Citrea network manually."); }
+      try { 
+        await switchChain({ chainId: citrea.id }); 
+        setShouldMint(true); 
+      }
+      catch (e) { 
+        alert("Please switch to Citrea network manually."); 
+      }
       return;
     }
-    writeContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'mintScore', args: [BigInt(level)] });
+
+    writeContract({ 
+      address: CONTRACT_ADDRESS, 
+      abi: CONTRACT_ABI, 
+      functionName: 'mintScore', 
+      args: [BigInt(level)],
+      chainId: citrea.id
+    });
   };
 
   const handleShare = async () => {
