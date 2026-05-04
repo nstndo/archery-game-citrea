@@ -847,12 +847,12 @@ export default function Game() {
         </div>
         <div>
           <h3 className="font-bold mb-1">IS IT SAFE?</h3>
-          <p className="text-sm opacity-70">I did my best! The verified <a href="https://basescan.org/token/0x432f699f1d35fd49b8b1afc0ea9fae62f45adadb" target="_blank" className="text-[#0000ff]">contract address</a> is available for viewing on Basescan.</p>
+          <p className="text-sm opacity-70">I did my best! The verified <a href="https://basescan.org/token/0x432f699f1d35fd49b8b1afc0ea9fae62f45adadb" target="_blank" className="text-[#f17c19]">contract address</a> is available for viewing on Citrea explorer.</p>
         </div>
       </div>
       <button
         onClick={closeModal}
-        className="w-full p-4 rounded-xl font-bold font-orbitron bg-[#0000ff] text-white"
+        className="w-full p-4 rounded-xl font-bold font-orbitron bg-[#f17c19] text-white"
       >
         CLOSE
       </button>
@@ -903,7 +903,7 @@ export default function Game() {
         </button>
         <button
           onClick={closeModal}
-          className="flex-1 p-3 rounded-xl font-bold font-orbitron bg-[#0000ff] text-white"
+          className="flex-1 p-3 rounded-xl font-bold font-orbitron bg-[#f17c19] text-white"
         >
           Close
         </button>
