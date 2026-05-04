@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain, usePublicClient } from 'wagmi';
 import { defineChain } from 'viem';
 
-// --- CONFIG SECTION FOR EASY REPLICATION ---
+// --- CONFIG ---
 const CHAIN_ID = 4114;
 const CONTRACT_ADDRESS = "0x7a98360c0Eb052a2B3A98b06a6cd4069582ff84D";
 const EXPLORER_URL = "https://explorer.mainnet.citrea.xyz";
@@ -85,7 +85,6 @@ export default function Game() {
   const targetSpeed = useRef(0.04);
   const rotationChangeTimer = useRef(0);
   const screenDims = useRef({ width: 0, height: 0 });
-  
   const assets = useRef({
     target: null as HTMLImageElement | null,
     shardB: null as HTMLImageElement | null,
@@ -102,7 +101,6 @@ export default function Game() {
       img.src = src;
       return img;
     };
-
     assets.current.target = loadImg('https://citrea-archery-game.vercel.app/citrus.webp');
     assets.current.shardB = loadImg('https://citrea-archery-game.vercel.app/slice1.webp');
     assets.current.shardAse = loadImg('https://citrea-archery-game.vercel.app/slice2.webp');
@@ -167,8 +165,6 @@ export default function Game() {
         canvas.height = height * dpr;
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.scale(dpr, dpr);
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
         targetRadius = width < 380 ? 70 : 80;
       }
     });
@@ -221,14 +217,8 @@ export default function Game() {
     };
 
     const createParticle = (x: number, y: number, img: HTMLImageElement, size: number): Particle => ({
-      x, y,
-      vx: (Math.random() - 0.5) * 12,
-      vy: (Math.random() - 1) * 12,
-      life: 1.0,
-      rotation: Math.random() * Math.PI * 2,
-      rotSpeed: (Math.random() - 0.5) * 0.3,
-      img,
-      size
+      x, y, vx: (Math.random() - 0.5) * 12, vy: (Math.random() - 1) * 12, life: 1.0,
+      rotation: Math.random() * Math.PI * 2, rotSpeed: (Math.random() - 0.5) * 0.3, img, size
     });
 
     const updateAndDrawParticles = () => {
@@ -239,11 +229,8 @@ export default function Game() {
       }
       particles.current.forEach(p => {
         if (p.img.complete) {
-          ctx.save();
-          ctx.globalAlpha = p.life;
-          ctx.translate(p.x, p.y); ctx.rotate(p.rotation);
-          ctx.drawImage(p.img, -p.size / 2, -p.size / 2, p.size, p.size);
-          ctx.restore();
+          ctx.save(); ctx.globalAlpha = p.life; ctx.translate(p.x, p.y); ctx.rotate(p.rotation);
+          ctx.drawImage(p.img, -p.size / 2, -p.size / 2, p.size, p.size); ctx.restore();
         }
       });
     };
@@ -251,15 +238,13 @@ export default function Game() {
     const loop = () => {
       const { width, height } = screenDims.current;
       if (width === 0 || height === 0) { animationFrameId = requestAnimationFrame(loop); return; }
-
       ctx.clearRect(0, 0, width, height);
       const centerX = width / 2;
       const centerY = height * 0.45;
       const startArrowY = height * 0.85;
 
       ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate(rotation.current);
+      ctx.translate(centerX, centerY); ctx.rotate(rotation.current);
       if (assets.current.target?.complete) {
         ctx.beginPath(); ctx.arc(0, 0, targetRadius, 0, Math.PI * 2); ctx.clip();
         ctx.drawImage(assets.current.target, -targetRadius, -targetRadius, targetRadius * 2, targetRadius * 2);
@@ -273,8 +258,7 @@ export default function Game() {
       ctx.restore();
 
       ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate(rotation.current);
+      ctx.translate(centerX, centerY); ctx.rotate(rotation.current);
       stuckArrows.current.forEach(a => drawArrow(0, 0, a.angle, true));
       ctx.restore();
 
@@ -298,13 +282,11 @@ export default function Game() {
             flyingArrow.current.y = impactY;
             let hitAngle = (Math.PI / 2) - rotation.current;
             hitAngle = ((hitAngle % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
-
             const collision = stuckArrows.current.some(a => {
               let diff = Math.abs(a.angle - hitAngle);
               if (diff > Math.PI) diff = (Math.PI * 2) - diff;
               return diff < 0.04;
             });
-
             if (collision) {
               gameState.current = 'gameover';
               setTimeout(() => setIsGameOver(true), 50);
@@ -321,21 +303,12 @@ export default function Game() {
           }
         }
       }
-
-      if (flyingArrow.current) {
-        drawArrow(centerX, flyingArrow.current.y);
-      } else if (arrowsLeftRef.current > 0 && gameState.current === 'playing') {
-        drawArrow(centerX, startArrowY);
-      }
-
+      if (flyingArrow.current) drawArrow(centerX, flyingArrow.current.y);
+      else if (arrowsLeftRef.current > 0 && gameState.current === 'playing') drawArrow(centerX, startArrowY);
       animationFrameId = requestAnimationFrame(loop);
     };
-
     loop();
-    return () => {
-      if (containerRef.current) resizeObserver.unobserve(containerRef.current);
-      cancelAnimationFrame(animationFrameId);
-    };
+    return () => { cancelAnimationFrame(animationFrameId); };
   }, [currentTheme, address]);
 
   const shoot = () => {
@@ -346,72 +319,55 @@ export default function Game() {
   const handlePointerDown = (e: React.PointerEvent) => {
     const target = e.target as HTMLElement;
     if (isGameOver || isLevelComplete || target.closest('button') || target.closest('.modal-card') || target.closest('.top-bar') || target.closest('.game-stats')) return;
-    e.preventDefault();
-    shoot();
+    e.preventDefault(); shoot();
   };
 
   const resetLevel = (lvl: number) => {
     if (resetContract) resetContract();
-    setIsGameOver(false);
-    setIsLevelComplete(false);
+    setIsGameOver(false); setIsLevelComplete(false);
     setTimeout(() => {
-      setLevel(lvl);
-      setArrowsLeft(10);
-      arrowsLeftRef.current = 10;
-      stuckArrows.current = [];
-      flyingArrow.current = null;
-      particles.current = [];
+      setLevel(lvl); setArrowsLeft(10); arrowsLeftRef.current = 10;
+      stuckArrows.current = []; flyingArrow.current = null; particles.current = [];
       gameState.current = 'playing';
     }, 100);
   };
 
-  const handleConnect = () => {
-    if (isConnected) { disconnect(); return; }
-    setShowWalletModal(true);
-  };
-
   const handleMint = async () => {
-    if (!isConnected) { handleConnect(); return; }
+    if (!isConnected) { setShowWalletModal(true); return; }
     if (chainId !== citrea.id) {
-      try {
-        await switchChain({ chainId: citrea.id });
-        setShouldMint(true);
-      } catch (error) {
-        alert("Please switch to Citrea network manually.");
-      }
+      try { await switchChain({ chainId: citrea.id }); setShouldMint(true); }
+      catch (e) { alert("Please switch to Citrea network manually."); }
       return;
     }
-    writeContract({
-      address: CONTRACT_ADDRESS,
-      abi: CONTRACT_ABI,
-      functionName: 'mintScore',
-      args: [BigInt(level)],
-    });
+    writeContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'mintScore', args: [BigInt(level)] });
   };
 
   const handleShare = async () => {
-    const text = `I reached Level ${level} in Citrea Archery! 🎯`;
-    const url = window.location.href;
+    const text = `I just reached Level ${level} in Citrea Archery! 🎯\n\nCan you beat my score?`;
+    const url = 'https://citrea-archery-game.vercel.app';
     if (navigator.share) {
       navigator.share({ title: 'Citrea Archery', text, url }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(`${text} ${url}`);
-      alert('Link copied!');
+      navigator.clipboard.writeText(`${text}\n${url}`); alert('Link copied!');
     }
   };
 
+  const renderProfile = () => {
+    if (isConnected && address) {
+      return (
+        <button onClick={() => disconnect()} className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl border transition-all active:scale-95 max-w-[140px] hover:opacity-70 font-orbitron ${currentTheme === 'light' ? 'bg-blue-100/50 border-blue-200 text-gray-900' : 'bg-white/10 border-white/20 text-white'}`}>
+          <span className="text-sm font-medium">{address.slice(0, 4)}...{address.slice(-4)}</span>
+        </button>
+      );
+    }
+    return (
+      <button onClick={() => setShowWalletModal(true)} className="px-4 py-2 rounded-2xl bg-[#f17c19] text-white text-sm font-bold uppercase tracking-wider active:scale-95 transition-transform font-orbitron">CONNECT</button>
+    );
+  };
+
   return (
-    <div 
-      ref={containerRef}
-      className="relative w-full h-screen overflow-hidden max-w-[600px] mx-auto"
-      onPointerDown={handlePointerDown}
-      style={{ 
-        touchAction: 'none',
-        background: currentTheme === 'dark' 
-          ? 'linear-gradient(180deg, #000000 0%, #1a1a2e 100%)'
-          : 'linear-gradient(180deg, #ffffff 0%, #e8f4ff 100%)'
-      }}
-    >
+    <div ref={containerRef} className="relative w-full h-screen overflow-hidden max-w-[600px] mx-auto" onPointerDown={handlePointerDown}
+      style={{ touchAction: 'none', background: currentTheme === 'dark' ? 'linear-gradient(180deg, #000000 0%, #1a1a2e 100%)' : 'linear-gradient(180deg, #ffffff 0%, #e8f4ff 100%)' }}>
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ touchAction: 'none' }} />
 
       <div className="absolute inset-0 pointer-events-none flex flex-col" style={{ zIndex: 10 }}>
@@ -421,34 +377,40 @@ export default function Game() {
             CITREA <span className="text-[#f17c19]">ARCHERY</span>
           </div>
           <div className="flex gap-2 items-center flex-shrink-0 min-w-0">
-            <button onClick={() => setCurrentTheme(t => t === 'dark' ? 'light' : 'dark')} className="p-2 rounded-full hover:bg-gray-500/10 transition-colors">
-              {currentTheme === 'dark' ? '☀️' : '🌙'}
+            <button onClick={() => setCurrentTheme(t => t === 'dark' ? 'light' : 'dark')} className="p-2 rounded-full hover:bg-gray-500/10 transition-colors flex items-center justify-center">
+              {currentTheme === 'dark' ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+              )}
             </button>
-            <button onClick={handleConnect} className={`px-4 py-2 rounded-2xl bg-[#f17c19] text-white text-sm font-bold uppercase tracking-wider active:scale-95 transition-transform font-orbitron`}>
-              {isConnected ? `${address?.slice(0,4)}...${address?.slice(-4)}` : 'CONNECT'}
-            </button>
+            {renderProfile()}
           </div>
         </div>
 
         {/* Stats Overlay */}
         <div className="game-stats pointer-events-auto flex items-center justify-center gap-3 px-4 mt-3">
-          <button onClick={() => { gameState.current = 'paused'; setShowLeaderboard(true); fetchLeaderboard(); }} className={`w-10 h-10 rounded-full flex justify-center items-center backdrop-blur-sm border ${currentTheme === 'light' ? 'bg-blue-100/50 border-blue-200 text-blue-600' : 'bg-black/50 border-white/10 text-white'}`}>🏆</button>
+          <button onClick={() => { gameState.current = 'paused'; setShowLeaderboard(true); fetchLeaderboard(); }} className={`w-10 h-10 rounded-full flex justify-center items-center backdrop-blur-sm border active:scale-90 transition-transform ${currentTheme === 'light' ? 'bg-blue-100/50 border-blue-200 text-blue-600' : 'bg-black/50 border-white/10 text-white'}`}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+          </button>
           <div className={`flex flex-col items-center justify-center px-6 py-2 rounded-2xl backdrop-blur-sm border min-w-[140px] ${currentTheme === 'light' ? 'bg-blue-100/50 border-blue-200' : 'bg-black/50 border-white/10'}`}>
             <div className={`text-sm font-bold font-orbitron ${currentTheme === 'dark' ? 'text-white' : 'text-[#000000]'}`}>LEVEL {level}</div>
             <div className={`text-xs font-bold font-orbitron ${currentTheme === 'dark' ? 'text-white/70' : 'text-[#f17c19]/70'}`}>{arrowsLeft} ARROWS</div>
           </div>
-          <button onClick={() => { gameState.current = 'paused'; setShowFaq(true); }} className={`w-10 h-10 rounded-full flex justify-center items-center backdrop-blur-sm border ${currentTheme === 'light' ? 'bg-blue-100/50 border-blue-200 text-blue-600' : 'bg-black/50 border-white/10 text-white'}`}>❓</button>
+          <button onClick={() => { gameState.current = 'paused'; setShowFaq(true); }} className={`w-10 h-10 rounded-full flex justify-center items-center backdrop-blur-sm border active:scale-90 transition-transform ${currentTheme === 'light' ? 'bg-blue-100/50 border-blue-200 text-blue-600' : 'bg-black/50 border-white/10 text-white'}`}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </button>
         </div>
 
         <div className="flex-1 pointer-events-auto flex items-center justify-center p-4">
           {showWalletModal && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
               <div className={`modal-card w-full max-w-md p-6 rounded-3xl shadow-2xl ${currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
-                <h2 className="text-2xl font-black font-orbitron text-center mb-4 uppercase">Connect</h2>
+                <h2 className="text-2xl font-black font-orbitron text-center mb-4 uppercase">CONNECT WALLET</h2>
                 <div className="space-y-3">
-                  {connectors.map((connector) => (
-                    <button key={connector.id} onClick={() => { connect({ connector }); setShowWalletModal(false); }} className={`w-full p-4 rounded-xl font-bold font-orbitron transition-all ${currentTheme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-100 hover:bg-gray-200'}`}>
-                      {connector.name}
+                  {connectors.filter(c => ['coinbaseWalletSDK', 'walletConnect', 'injected'].includes(c.id)).map((c) => (
+                    <button key={c.id} onClick={() => { connect({ connector: c }); setShowWalletModal(false); }} className={`w-full p-4 rounded-xl font-bold font-orbitron transition-all ${currentTheme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                      {c.name}
                     </button>
                   ))}
                 </div>
@@ -457,25 +419,27 @@ export default function Game() {
             </div>
           )}
 
-          {isGameOver && (
+          {!showLeaderboard && !showFaq && isGameOver && (
             <div className={`modal-card w-full max-w-md p-6 rounded-3xl shadow-2xl ${currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
               <h2 className="text-3xl font-black font-orbitron text-center mb-2">GAME OVER</h2>
+              <p className="text-center mb-4 opacity-70 font-orbitron">You hit another arrow!</p>
               <div className="text-center mb-6 p-6 rounded-2xl border border-white/2">
-                <div className="text-sm opacity-70 mb-1 font-orbitron uppercase">Level Reached</div>
+                <div className="text-sm opacity-70 mb-1 font-orbitron">LEVEL REACHED</div>
                 <div className="text-6xl font-black font-orbitron text-[#f17c19]">{level}</div>
               </div>
               <div className="flex gap-3 mb-3">
-                <button onClick={handleMint} className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase bg-[#f17c19] text-white">{isConfirming ? 'MINTING...' : 'MINT NFT'}</button>
-                <button onClick={handleShare} className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase bg-[#f17c19] text-white">SHARE</button>
+                <button onClick={handleMint} disabled={isPending || isConfirming || isConfirmed} className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase bg-[#f17c19] text-white disabled:opacity-50 tracking-widest">{isPending ? 'CONFIRMING...' : isConfirming ? 'MINTING...' : isConfirmed ? 'MINTED!' : 'MINT NFT'}</button>
+                <button onClick={handleShare} className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase bg-[#f17c19] text-white tracking-widest">SHARE</button>
               </div>
-              <button onClick={() => resetLevel(1)} className={`w-full p-4 rounded-2xl font-bold font-orbitron text-base uppercase border ${currentTheme === 'light' ? 'bg-gray-100 text-gray-600' : 'bg-white/5 text-gray-400'}`}>TRY AGAIN</button>
+              <button onClick={() => resetLevel(1)} className={`w-full p-4 rounded-2xl font-bold font-orbitron text-base uppercase border ${currentTheme === 'light' ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-white/5 text-gray-400 border-white/10'}`}>TRY AGAIN</button>
             </div>
           )}
 
-          {isLevelComplete && (
+          {!showLeaderboard && !showFaq && isLevelComplete && (
             <div className={`modal-card w-full max-w-md p-6 rounded-3xl shadow-2xl ${currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
-              <h2 className="text-3xl font-black font-orbitron text-center mb-2">COMPLETE!</h2>
-              <button onClick={() => resetLevel(level + 1)} className="w-full p-4 mt-4 rounded-2xl font-bold font-orbitron text-base uppercase bg-[#f17c19] text-white">NEXT LEVEL</button>
+              <h2 className="text-3xl font-black font-orbitron text-center mb-2">LEVEL COMPLETE!</h2>
+              <p className="text-center mb-6 opacity-70 font-orbitron">Great shot! Ready for the next challenge?</p>
+              <button onClick={() => resetLevel(level + 1)} className="w-full p-4 rounded-2xl font-bold font-orbitron text-base uppercase bg-[#f17c19] text-white">NEXT LEVEL</button>
             </div>
           )}
         </div>
@@ -483,12 +447,13 @@ export default function Game() {
         {showFaq && (
           <div className="fixed inset-0 flex items-center justify-center p-4 pointer-events-auto" style={{ zIndex: 20 }}>
             <div className={`modal-card w-full max-w-md p-6 rounded-3xl shadow-2xl ${currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
-              <h2 className="text-2xl font-black font-orbitron text-center mb-4 uppercase">Rules</h2>
-              <div className="space-y-4 mb-6 font-orbitron text-sm">
-                <p>Tap to shoot. Don't hit other arrows.</p>
-                <p>Mint your score on <b>Citrea</b> as an NFT.</p>
+              <h2 className="text-2xl font-black font-orbitron text-center mb-4">GAME RULES</h2>
+              <div className="space-y-4 mb-6 font-orbitron">
+                <div><h3 className="font-bold mb-1 uppercase">How to play?</h3><p className="text-sm opacity-70">Tap anywhere to shoot. Fill the target without hitting other arrows.</p></div>
+                <div><h3 className="font-bold mb-1 uppercase">What are NFTs?</h3><p className="text-sm opacity-70">Your high score can be minted as a unique NFT on the Citrea Mainnet. Free. Just gas fee.</p></div>
+                <div><h3 className="font-bold mb-1 uppercase">Is it safe?</h3><p className="text-sm opacity-70">I did my best! The verified <a href={`${EXPLORER_URL}/address/${CONTRACT_ADDRESS}`} target="_blank" className="text-[#f17c19]">contract address</a> is available for viewing on Citrea explorer.</p></div>
               </div>
-              <button onClick={() => { setShowFaq(false); gameState.current = 'playing'; }} className="w-full p-4 rounded-xl font-bold font-orbitron bg-[#f17c19] text-white">CLOSE</button>
+              <button onClick={() => { setShowFaq(false); gameState.current = 'playing'; }} className="w-full p-4 rounded-xl font-bold font-orbitron bg-[#f17c19] text-white uppercase">Close</button>
             </div>
           </div>
         )}
@@ -496,18 +461,24 @@ export default function Game() {
         {showLeaderboard && (
           <div className="fixed inset-0 flex items-center justify-center p-4 pointer-events-auto" style={{ zIndex: 20 }}>
             <div className={`modal-card w-full max-w-md p-6 rounded-3xl shadow-2xl ${currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
-              <h2 className="text-2xl font-black font-orbitron text-center mb-4">LEADERBOARD</h2>
+              <h2 className="text-2xl font-black font-orbitron text-center mb-4 uppercase">Leaderboard</h2>
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {isLoadingLeaderboard ? <div className="text-center font-orbitron">LOADING...</div> : 
-                  leaderboardData.map((item, i) => (
-                    <div key={i} className={`flex items-center justify-between p-3 rounded-xl ${item.isCurrentUser ? 'bg-blue-500/20 border border-blue-500' : 'bg-white/5'}`}>
-                      <span className="font-bold">#{i + 1} {item.address.slice(0,6)}...</span>
-                      <span className="font-black">LVL {item.level}</span>
+                  leaderboardData.length > 0 ? leaderboardData.map((item, i) => (
+                    <div key={i} className={`flex items-center justify-between p-3 rounded-xl ${item.isCurrentUser ? 'bg-blue-500/20 border-2 border-blue-500' : currentTheme === 'dark' ? 'bg-white/5' : 'bg-gray-100'}`}>
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-bold font-orbitron">#{i+1} {item.address.slice(0,6)}...{item.address.slice(-4)}</span>
+                        <span className="text-xs opacity-70 font-orbitron">Token ID: {item.tokenId}</span>
+                      </div>
+                      <div className="font-black font-orbitron text-base flex-shrink-0 ml-2 uppercase"><span className="text-sm opacity-70">Lvl</span> {item.level}</div>
                     </div>
-                  ))
+                  )) : <div className="text-center py-8 opacity-50 font-orbitron">No champions yet.</div>
                 }
               </div>
-              <button onClick={() => { setShowLeaderboard(false); gameState.current = 'playing'; }} className="w-full mt-4 p-4 rounded-xl font-bold font-orbitron bg-[#f17c19] text-white">CLOSE</button>
+              <div className="flex gap-2 mt-4">
+                <button onClick={fetchLeaderboard} className={`flex-1 p-3 rounded-xl font-bold font-orbitron ${currentTheme === 'dark' ? 'bg-white/10' : 'bg-gray-200'}`}>Refresh</button>
+                <button onClick={() => { setShowLeaderboard(false); gameState.current = 'playing'; }} className="flex-1 p-3 rounded-xl font-bold font-orbitron bg-[#f17c19] text-white">Close</button>
+              </div>
             </div>
           </div>
         )}
