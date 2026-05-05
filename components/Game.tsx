@@ -111,13 +111,15 @@ export default function Game() {
   useEffect(() => {
     if (shouldMint && chainId === citrea.id && isConnected) {
       setShouldMint(false);
-      writeContract({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        functionName: 'mintScore',
-        args: [BigInt(level)],
-        chain: citrea,
-      });
+      setTimeout(() => {
+        writeContract({
+          address: CONTRACT_ADDRESS,
+          abi: CONTRACT_ABI,
+          functionName: 'mintScore',
+          args: [BigInt(level)],
+          chain: citrea,
+        });
+      }, 500);
     }
   }, [chainId, shouldMint, isConnected, level, writeContract]);
 
@@ -334,16 +336,45 @@ export default function Game() {
   };
 
   const handleMint = async () => {
-    if (!isConnected) { setShowWalletModal(true); return; }
+    if (!isConnected) { 
+      setShowWalletModal(true); 
+      return; 
+    }
 
     if (chainId !== citrea.id) {
-      try { 
-        await switchChain({ chainId: citrea.id }); 
-        setShouldMint(true); 
-      }
-      catch (e) { 
-        console.error("Switch error:", e);
-        alert("Please switch to Citrea Mainnet manually."); 
+      try {
+        await switchChain({ chainId: citrea.id });
+        setShouldMint(true);
+      } catch (e) {
+        if (typeof window !== 'undefined' && (window as any).ethereum) {
+          try {
+            await (window as any).ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: `0x${citrea.id.toString(16)}` }],
+            });
+            setShouldMint(true);
+          } catch (switchError: any) {
+            if (switchError.code === 4902) {
+              try {
+                await (window as any).ethereum.request({
+                  method: 'wallet_addEthereumChain',
+                  params: [
+                    {
+                      chainId: `0x${citrea.id.toString(16)}`,
+                      chainName: citrea.name,
+                      nativeCurrency: citrea.nativeCurrency,
+                      rpcUrls: citrea.rpcUrls.default.http,
+                      blockExplorerUrls: [citrea.blockExplorers.default.url],
+                    },
+                  ],
+                });
+                setShouldMint(true);
+              } catch (addError) {
+                alert("Please add Citrea Mainnet to your wallet.");
+              }
+            }
+          }
+        }
       }
       return;
     }
@@ -354,7 +385,7 @@ export default function Game() {
         abi: CONTRACT_ABI, 
         functionName: 'mintScore', 
         args: [BigInt(level)],
-        chain: citrea,
+        chain: citrea, // Оставляем для viem
       });
     } catch (error) {
       console.error("Mint failed:", error);
