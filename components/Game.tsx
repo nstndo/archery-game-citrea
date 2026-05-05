@@ -13,6 +13,7 @@ import {
   useConfig
 } from 'wagmi';
 import { config, citrea } from './Providers'; 
+import { writeContract as wagmiWriteContract } from '@wagmi/core';
 import { encodeFunctionData } from 'viem';
 import { sendTransaction } from '@wagmi/core';
 
@@ -60,10 +61,10 @@ export default function Game() {
   const { connectors, connect } = useConnect();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
-  const { switchChainAsync } = useSwitchChain();
+  const { switchChain } = useSwitchChain();
   const publicClient = usePublicClient();
 
-  const { data: hash, isPending, reset: resetContract } = useWriteContract();
+  const { data: hash, isPending, writeContract, reset: resetContract } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
 
   const [level, setLevel] = useState(1);
@@ -76,6 +77,7 @@ export default function Game() {
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
   const [currentTheme, setCurrentTheme] = useState<'dark' | 'light'>('light');
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [shouldMint, setShouldMint] = useState(false);
 
   const gameState = useRef<'playing' | 'gameover' | 'level_complete' | 'paused'>('playing');
   const stuckArrows = useRef<Arrow[]>([]);
@@ -110,6 +112,21 @@ export default function Game() {
     assets.current.shardAse_Blue = loadImg('https://citrea-archery-game.vercel.app/slice2.webp');
   }, []);
 
+  useEffect(() => {
+    if (shouldMint && chainId === citrea.id && isConnected) {
+      setShouldMint(false);
+      setTimeout(() => {
+        writeContract({
+          address: CONTRACT_ADDRESS,
+          abi: CONTRACT_ABI,
+          functionName: 'mintScore',
+          args: [BigInt(level)],
+          chain: citrea,
+        });
+      }, 500);
+    }
+  }, [chainId, shouldMint, isConnected, level, writeContract]);
+
   const fetchLeaderboard = async () => {
     if (!publicClient) return;
     setIsLoadingLeaderboard(true);
@@ -136,6 +153,182 @@ export default function Game() {
     }
   };
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let targetRadius = 90;
+    const arrowLength = 65;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        screenDims.current = { width, height };
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
+        targetRadius = width < 380 ? 70 : 80;
+      }
+    });
+
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
+
+    const drawArrow = (x: number, y: number, angle?: number, isStuck = false) => {
+      ctx.save();
+      const color = currentTheme === 'dark' ? '#ffffff' : '#f17c19';
+      ctx.fillStyle = color;
+      ctx.shadowColor = currentTheme === 'dark' ? 'rgba(255,255,255,0.6)' : 'rgb(248, 99, 6)';
+      ctx.shadowBlur = 8;
+
+      if (isStuck) {
+        ctx.rotate(angle || 0);
+        ctx.translate(targetRadius, 0);
+        ctx.beginPath();
+        ctx.roundRect(0, -1.5, arrowLength, 3, 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-2, 0); ctx.lineTo(12, -7); ctx.lineTo(8, 0); ctx.lineTo(12, 7);
+        ctx.closePath(); ctx.fill();
+        ctx.beginPath();
+        const tailX = arrowLength;
+        ctx.moveTo(tailX - 14, 0); ctx.lineTo(tailX, -8); ctx.lineTo(tailX + 2, -8); ctx.lineTo(tailX - 4, 0); ctx.lineTo(tailX + 2, 8); ctx.lineTo(tailX, 8);
+        ctx.closePath(); ctx.fill();
+      } else {
+        ctx.translate(x, y);
+        ctx.beginPath();
+        ctx.roundRect(-1.5, 0, 3, arrowLength, 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(0, -2); ctx.lineTo(-7, 12); ctx.lineTo(0, 8); ctx.lineTo(7, 12);
+        ctx.closePath(); ctx.fill();
+        ctx.beginPath();
+        const tailY = arrowLength;
+        ctx.moveTo(0, tailY - 14); ctx.lineTo(-8, tailY); ctx.lineTo(-8, tailY + 2); ctx.lineTo(0, tailY - 4); ctx.lineTo(8, tailY + 2); ctx.lineTo(8, tailY);
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+    };
+
+    const spawnHitParticles = (x: number, y: number) => {
+      const bImg = currentTheme === 'dark' ? assets.current.shardB : assets.current.shardB_Blue;
+      const aseImg = currentTheme === 'dark' ? assets.current.shardAse : assets.current.shardAse_Blue;
+      if (bImg) particles.current.push(createParticle(x, y, bImg, 24));
+      if (aseImg) {
+        for (let i = 0; i < 3; i++) particles.current.push(createParticle(x, y, aseImg, 18));
+      }
+    };
+
+    const createParticle = (x: number, y: number, img: HTMLImageElement, size: number): Particle => ({
+      x, y, vx: (Math.random() - 0.5) * 12, vy: (Math.random() - 1) * 12, life: 1.0,
+      rotation: Math.random() * Math.PI * 2, rotSpeed: (Math.random() - 0.5) * 0.3, img, size
+    });
+
+    const updateAndDrawParticles = () => {
+      for (let i = particles.current.length - 1; i >= 0; i--) {
+        let p = particles.current[i];
+        p.x += p.vx; p.y += p.vy; p.vy += 0.5; p.rotation += p.rotSpeed; p.life -= 0.02;
+        if (p.life <= 0) particles.current.splice(i, 1);
+      }
+      particles.current.forEach(p => {
+        if (p.img.complete) {
+          ctx.save(); ctx.globalAlpha = p.life; ctx.translate(p.x, p.y); ctx.rotate(p.rotation);
+          ctx.drawImage(p.img, -p.size / 2, -p.size / 2, p.size, p.size); ctx.restore();
+        }
+      });
+    };
+
+    const loop = () => {
+      const { width, height } = screenDims.current;
+      if (width === 0 || height === 0) { animationFrameId = requestAnimationFrame(loop); return; }
+      ctx.clearRect(0, 0, width, height);
+      const centerX = width / 2;
+      const centerY = height * 0.45;
+      const startArrowY = height * 0.85;
+
+      ctx.save();
+      ctx.translate(centerX, centerY); ctx.rotate(rotation.current);
+      if (assets.current.target?.complete) {
+        ctx.beginPath(); ctx.arc(0, 0, targetRadius, 0, Math.PI * 2); ctx.clip();
+        ctx.drawImage(assets.current.target, -targetRadius, -targetRadius, targetRadius * 2, targetRadius * 2);
+        ctx.beginPath(); ctx.arc(0, 0, targetRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = currentTheme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,255,0.1)';
+        ctx.lineWidth = 2; ctx.stroke();
+      } else {
+        ctx.beginPath(); ctx.arc(0, 0, targetRadius, 0, Math.PI * 2);
+        ctx.fillStyle = '#f17c19'; ctx.fill();
+      }
+      ctx.restore();
+
+      ctx.save();
+      ctx.translate(centerX, centerY); ctx.rotate(rotation.current);
+      stuckArrows.current.forEach(a => drawArrow(0, 0, a.angle, true));
+      ctx.restore();
+
+      updateAndDrawParticles();
+
+      if (gameState.current === 'playing') {
+        rotationChangeTimer.current--;
+        if (rotationChangeTimer.current <= 0) {
+          rotationChangeTimer.current = 60 + Math.random() * 120;
+          const maxSpeed = 0.05 + (level * 0.005);
+          const dir = Math.random() > 0.5 ? 1 : -1;
+          targetSpeed.current = Math.random() < 0.2 ? 0.01 * dir : (0.02 + Math.random() * maxSpeed) * dir;
+        }
+        currentSpeed.current += (targetSpeed.current - currentSpeed.current) * 0.03;
+        rotation.current += currentSpeed.current;
+
+        if (flyingArrow.current) {
+          flyingArrow.current.y -= 40;
+          const impactY = centerY + targetRadius;
+          if (flyingArrow.current.y <= impactY) {
+            flyingArrow.current.y = impactY;
+            let hitAngle = (Math.PI / 2) - rotation.current;
+            hitAngle = ((hitAngle % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+            const collision = stuckArrows.current.some(a => {
+              let diff = Math.abs(a.angle - hitAngle);
+              if (diff > Math.PI) diff = (Math.PI * 2) - diff;
+              return diff < 0.04;
+            });
+            if (collision) {
+              gameState.current = 'gameover';
+              setTimeout(() => setIsGameOver(true), 50);
+            } else {
+              stuckArrows.current.push({ angle: hitAngle });
+              flyingArrow.current = null;
+              spawnHitParticles(centerX, impactY);
+              arrowsLeftRef.current -= 1;
+              setArrowsLeft(arrowsLeftRef.current);
+              if (arrowsLeftRef.current <= 0) {
+                setTimeout(() => { gameState.current = 'paused'; setIsLevelComplete(true); }, 50);
+              }
+            }
+          }
+        }
+      }
+      if (flyingArrow.current) drawArrow(centerX, flyingArrow.current.y);
+      else if (arrowsLeftRef.current > 0 && gameState.current === 'playing') drawArrow(centerX, startArrowY);
+      animationFrameId = requestAnimationFrame(loop);
+    };
+    loop();
+    return () => { cancelAnimationFrame(animationFrameId); };
+  }, [currentTheme, address]);
+
+  const shoot = () => {
+    if (gameState.current !== 'playing' || flyingArrow.current || arrowsLeftRef.current <= 0) return;
+    flyingArrow.current = { y: screenDims.current.height * 0.85 };
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    const target = e.target as HTMLElement;
+    if (isGameOver || isLevelComplete || target.closest('button') || target.closest('.modal-card') || target.closest('.top-bar') || target.closest('.game-stats')) return;
+    e.preventDefault(); shoot();
+  };
+
   const resetLevel = (lvl: number) => {
     if (resetContract) resetContract();
     setIsGameOver(false); setIsLevelComplete(false);
@@ -146,44 +339,48 @@ export default function Game() {
     }, 100);
   };
 
-  const handleMint = async () => {
-    if (!isConnected) {
-      setShowWalletModal(true);
+const { switchChainAsync } = useSwitchChain();
+
+const handleMint = async () => {
+  if (!isConnected) {
+    setShowWalletModal(true);
+    return;
+  }
+
+  try {
+    if (chainId !== citrea.id) {
+      console.log("Switching network to Citrea...");
+      await switchChainAsync({ chainId: citrea.id });
       return;
     }
 
-    try {
-      let currentChain = chainId;
+    const data = encodeFunctionData({
+      abi: CONTRACT_ABI,
+      functionName: 'mintScore',
+      args: [BigInt(level)],
+    });
 
-      if (currentChain !== citrea.id) {
-        const switched = await switchChainAsync({ chainId: citrea.id });
-        currentChain = switched.id;
+    console.log("Sending transaction directly to Citrea...");
 
-        if (currentChain !== citrea.id) {
-          alert("Switch network to Citrea");
-          return;
-        }
-      }
+    const hash = await sendTransaction(config, {
+      to: CONTRACT_ADDRESS as `0x${string}`,
+      data: data,
+      chainId: citrea.id,
+    });
 
-      const data = encodeFunctionData({
-        abi: CONTRACT_ABI,
-        functionName: 'mintScore',
-        args: [BigInt(level)],
-      });
+    console.log("Success! Hash:", hash);
+    alert("Transaction sent! Check your wallet.");
 
-      const hash = await sendTransaction(config, {
-        to: CONTRACT_ADDRESS,
-        data,
-        chainId: citrea.id,
-      });
-
-      console.log("TX sent:", hash);
-
-    } catch (error: any) {
-      console.error(error);
-      alert(error.shortMessage || "Mint failed");
+  } catch (error: any) {
+    console.error("Mint Error Details:", error);
+    
+    if (error.message.includes('User rejected')) {
+      return;
     }
-  };
+    
+    alert(`Ошибка сети: убедитесь, что в кошельке выбрана Citrea. (${error.shortMessage || "Error"})`);
+  }
+};
 
   const handleShare = async () => {
     const text = `I just reached Level ${level} in Citrea Archery! 🎯\n\nCan you beat my score?\n\n`;
