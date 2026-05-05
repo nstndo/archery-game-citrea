@@ -20,6 +20,7 @@ const APP_URL = "https://citrea-archery-game.vercel.app";
 export const metadata: Metadata = {
   title: "Citrea Archery",
   description: "Compete in the Citrea Archery Tournament. Mint your score as NFT on Citrea.",
+  metadataBase: new URL(APP_URL),
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
@@ -28,7 +29,24 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Citrea Archery",
     description: "Compete in the Citrea Archery Tournament.",
-    images: [`https://citrea-archery-game.vercel.app/opengraph-img.png?v=2`],
+    url: APP_URL,
+    siteName: "Citrea Archery",
+    images: [
+      {
+        url: `/opengraph-img.png?v=3`,
+        width: 1200,
+        height: 630,
+        alt: "Citrea Archery Tournament",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Citrea Archery",
+    description: "Compete in the Citrea Archery Tournament. Mint your score as NFT on Citrea.",
+    images: [`/opengraph-img.png?v=3`],
   },
 };
 
