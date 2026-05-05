@@ -330,18 +330,19 @@ const handleMint = async () => {
     return;
   }
 
-  try {
-    if (chainId !== citrea.id) {
-      console.log("Switching network to Citrea...");
-      await switchChainAsync({ chainId: citrea.id });
-      return; 
-    }
+  const provider = (window as any).ethereum;
+  if (!provider) {
+    alert("Wallet provider not found");
+    return;
+  }
 
-    const walletClient = await getWalletClient(config);
-    if (!walletClient) {
-      alert("Wallet connection lost. Please reconnect.");
-      return;
-    }
+  try {
+    console.log("Forcing network switch via RPC...");
+    
+    await provider.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x1012' }],
+    });
 
     const data = encodeFunctionData({
       abi: CONTRACT_ABI,
@@ -349,25 +350,46 @@ const handleMint = async () => {
       args: [BigInt(level)],
     });
 
-    console.log("Sending transaction...");
+    console.log("Sending raw transaction...");
 
-    const hash = await walletClient.sendTransaction({
-      account: address,
-      to: CONTRACT_ADDRESS as `0x${string}`,
+    const transactionParameters = {
+      to: CONTRACT_ADDRESS,
+      from: address,
       data: data,
+      chainId: '0x1012', // Citrea Mainnet
+    };
+
+    const txHash = await provider.request({
+      method: 'eth_sendTransaction',
+      params: [transactionParameters],
     });
 
-    console.log("MINT SUCCESS! Hash:", hash);
-    alert("Transaction sent! Check your wallet.");
+    console.log("MINT SUCCESS! Hash:", txHash);
+    alert("Transaction sent successfully!");
 
   } catch (error: any) {
     console.error("MINT ERROR:", error);
-    if (error.message?.includes('User rejected')) return;
-    
-    if (error.message?.includes('ChainMismatchError')) {
-      alert("Network sync error. Please refresh the page and try again.");
+
+    if (error.code === 4902) {
+      try {
+        await provider.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: '0x1012',
+            chainName: 'Citrea Mainnet',
+            nativeCurrency: { name: 'cBTC', symbol: 'cBTC', decimals: 18 },
+            rpcUrls: ['https://rpc.mainnet.citrea.xyz'],
+            blockExplorerUrls: ['https://explorer.mainnet.citrea.xyz']
+          }]
+        });
+        handleMint();
+      } catch (addError) {
+        alert("Please add Citrea Mainnet to your wallet.");
+      }
+    } else if (error.message?.includes('User rejected')) {
+      return; 
     } else {
-      alert(`Error: ${error.shortMessage || "Transaction failed"}`);
+      alert(`Mint failed: ${error.message || "Unknown error"}`);
     }
   }
 };
