@@ -14,6 +14,8 @@ import {
 } from 'wagmi';
 import { config, citrea } from './Providers'; 
 import { writeContract as wagmiWriteContract } from '@wagmi/core';
+import { encodeFunctionData } from 'viem';
+import { sendTransaction } from '@wagmi/core';
 
 // --- CONFIG ---
 const CONTRACT_ADDRESS = "0x7a98360c0Eb052a2B3A98b06a6cd4069582ff84D";
@@ -75,7 +77,6 @@ export default function Game() {
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
   const [currentTheme, setCurrentTheme] = useState<'dark' | 'light'>('light');
   const [showWalletModal, setShowWalletModal] = useState(false);
-  const [shouldMint, setShouldMint] = useState(false);
 
   const gameState = useRef<'playing' | 'gameover' | 'level_complete' | 'paused'>('playing');
   const stuckArrows = useRef<Arrow[]>([]);
@@ -109,21 +110,6 @@ export default function Game() {
     assets.current.shardB_Blue = loadImg('https://citrea-archery-game.vercel.app/slice1.webp');
     assets.current.shardAse_Blue = loadImg('https://citrea-archery-game.vercel.app/slice2.webp');
   }, []);
-
-  useEffect(() => {
-    if (shouldMint && chainId === citrea.id && isConnected) {
-      setShouldMint(false);
-      setTimeout(() => {
-        writeContract({
-          address: CONTRACT_ADDRESS,
-          abi: CONTRACT_ABI,
-          functionName: 'mintScore',
-          args: [BigInt(level)],
-          chain: citrea,
-        });
-      }, 500);
-    }
-  }, [chainId, shouldMint, isConnected, level, writeContract]);
 
   const fetchLeaderboard = async () => {
     if (!publicClient) return;
@@ -337,7 +323,7 @@ export default function Game() {
     }, 100);
   };
 
-const { switchChainAsync } = useSwitchChain(); // Добавь async версию хука в начало компонента
+const { switchChainAsync } = useSwitchChain();
 
 const handleMint = async () => {
   if (!isConnected) {
@@ -346,37 +332,38 @@ const handleMint = async () => {
   }
 
   try {
-    if (chainId !== citrea.id) {
-      console.log("Wrong chain detected. Switching to Citrea...");
-      try {
-        await switchChainAsync({ chainId: citrea.id });
-        return; 
-      } catch (switchError) {
-        console.error("User rejected chain switch", switchError);
-        alert("Please switch to Citrea Mainnet in your wallet to mint.");
+    let currentChain = chainId;
+
+    if (currentChain !== citrea.id) {
+      console.log("Switching network...");
+
+      const switched = await switchChainAsync({ chainId: citrea.id });
+
+      currentChain = switched.id;
+
+      if (currentChain !== citrea.id) {
+        alert("Failed to switch network");
         return;
       }
     }
 
-    console.log("Correct chain. Executing mint...");
-    
-    const hash = await wagmiWriteContract(config, {
-      chainId: citrea.id,
+    console.log("Minting on correct chain...");
+
+    await writeContract({
       address: CONTRACT_ADDRESS,
       abi: CONTRACT_ABI,
       functionName: 'mintScore',
       args: [BigInt(level)],
+      chainId: citrea.id,
     });
-    
-    console.log("Transaction sent! Hash:", hash);
 
   } catch (error: any) {
-    console.error("Mint Error Details:", error);
-    
-    if (error.message.includes('ChainMismatchError')) {
-      alert("Wallet network sync error. Please refresh the page and try again.");
+    console.error(error);
+
+    if (error.name === 'UserRejectedRequestError') {
+      alert("Transaction rejected");
     } else {
-      alert(`Error: ${error.shortMessage || "Transaction failed"}`);
+      alert(error.shortMessage || "Mint failed");
     }
   }
 };
