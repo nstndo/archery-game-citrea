@@ -418,7 +418,7 @@ const handleMint = async () => {
   const renderProfile = () => {
     if (isConnected && address) {
       return (
-        <button onClick={() => disconnect()} className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl border transition-all active:scale-95 max-w-[140px] hover:opacity-70 font-orbitron ${currentTheme === 'light' ? 'bg-blue-100/50 border-blue-200 text-gray-900' : 'bg-white/10 border-white/20 text-white'}`}>
+        <button onClick={() => disconnect()} className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl border transition-all active:scale-95 max-w-[140px] hover:opacity-70 font-orbitron ${currentTheme === 'light' ? 'bg-orange-50 border-orange-200 text-gray-900' : 'bg-white/10 border-white/20 text-white'}`}>
           <span className="text-sm font-medium">{address.slice(0, 4)}...{address.slice(-4)}</span>
         </button>
       );
