@@ -325,10 +325,16 @@ export default function Game() {
   };
 
   const handleMint = async () => {
-    if (!isConnected || !walletClient) {
-      setShowWalletModal(true);
-      return;
-    }
+  if (!isConnected) {
+    setShowWalletModal(true);
+    return;
+  }
+
+  if (!walletClient) {
+    console.log("Waiting for wallet client...");
+    alert("Wallet is initializing. Please try again in a moment.");
+    return;
+  }
 
     try {
       // 1. Force network switch using walletClient directly to bypass internal cache mismatches
