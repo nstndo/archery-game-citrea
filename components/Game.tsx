@@ -508,7 +508,7 @@ export default function Game() {
                   disabled={isPending || isConfirming || isConfirmed} 
                   className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase bg-[#f17c19] text-white disabled:opacity-50 tracking-widest"
                 >
-                  {isConfirmed ? 'MINTED!' : isConfirming ? 'MINTING...' : 'MINT NFT'}
+                  {isPending ? 'CONFIRMING...' : isConfirming ? 'MINTING...' : isConfirmed ? 'MINTED!' : 'MINT NFT'}
                 </button>
                 <button onClick={handleShare} className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase bg-[#f17c19] text-white tracking-widest">SHARE</button>
               </div>
