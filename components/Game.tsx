@@ -10,12 +10,12 @@ import {
   useChainId, 
   useSwitchChain, 
   usePublicClient,
-  useConfig
+  useConfig,
+  useWalletClient
 } from 'wagmi';
 import { config, citrea } from './Providers'; 
 import { writeContract as wagmiWriteContract } from '@wagmi/core';
 import { encodeFunctionData } from 'viem';
-import { sendTransaction } from '@wagmi/core';
 
 // --- CONFIG ---
 const CONTRACT_ADDRESS = "0x7a98360c0Eb052a2B3A98b06a6cd4069582ff84D";
@@ -61,8 +61,9 @@ export default function Game() {
   const { connectors, connect } = useConnect();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
-  const { switchChain } = useSwitchChain();
+  const { switchChainAsync } = useSwitchChain();
   const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient();
 
   const { data: hash, isPending, writeContract, reset: resetContract } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
@@ -77,7 +78,6 @@ export default function Game() {
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
   const [currentTheme, setCurrentTheme] = useState<'dark' | 'light'>('light');
   const [showWalletModal, setShowWalletModal] = useState(false);
-  const [shouldMint, setShouldMint] = useState(false);
 
   const gameState = useRef<'playing' | 'gameover' | 'level_complete' | 'paused'>('playing');
   const stuckArrows = useRef<Arrow[]>([]);
@@ -111,21 +111,6 @@ export default function Game() {
     assets.current.shardB_Blue = loadImg('https://citrea-archery-game.vercel.app/slice1.webp');
     assets.current.shardAse_Blue = loadImg('https://citrea-archery-game.vercel.app/slice2.webp');
   }, []);
-
-  useEffect(() => {
-    if (shouldMint && chainId === citrea.id && isConnected) {
-      setShouldMint(false);
-      setTimeout(() => {
-        writeContract({
-          address: CONTRACT_ADDRESS,
-          abi: CONTRACT_ABI,
-          functionName: 'mintScore',
-          args: [BigInt(level)],
-          chain: citrea,
-        });
-      }, 500);
-    }
-  }, [chainId, shouldMint, isConnected, level, writeContract]);
 
   const fetchLeaderboard = async () => {
     if (!publicClient) return;
@@ -339,48 +324,49 @@ export default function Game() {
     }, 100);
   };
 
-const { switchChainAsync } = useSwitchChain();
-
-const handleMint = async () => {
-  if (!isConnected) {
-    setShowWalletModal(true);
-    return;
-  }
-
-  try {
-    if (chainId !== citrea.id) {
-      console.log("Switching network to Citrea...");
-      await switchChainAsync({ chainId: citrea.id });
+  const handleMint = async () => {
+    if (!isConnected || !walletClient) {
+      setShowWalletModal(true);
       return;
     }
 
-    const data = encodeFunctionData({
-      abi: CONTRACT_ABI,
-      functionName: 'mintScore',
-      args: [BigInt(level)],
-    });
+    try {
+      // 1. Force network switch using walletClient directly to bypass internal cache mismatches
+      try {
+        await walletClient.switchChain({ id: citrea.id });
+      } catch (switchError) {
+        // Continue if user already switched or if switch fails (it will error later if wrong)
+      }
 
-    console.log("Sending transaction directly to Citrea...");
+      // 2. Prepare calldata
+      const data = encodeFunctionData({
+        abi: CONTRACT_ABI,
+        functionName: 'mintScore',
+        args: [BigInt(level)],
+      });
 
-    const hash = await sendTransaction(config, {
-      to: CONTRACT_ADDRESS as `0x${string}`,
-      data: data,
-      chainId: citrea.id,
-    });
+      // 3. Send raw transaction via walletClient
+      // This bypasses wagmi's useWriteContract safety checks that trigger ChainMismatchError
+      const hash = await walletClient.sendTransaction({
+        account: address,
+        to: CONTRACT_ADDRESS as `0x${string}`,
+        data: data,
+        chain: citrea,
+        kzg: undefined
+      });
 
-    console.log("Success! Hash:", hash);
-    alert("Transaction sent! Check your wallet.");
+      console.log("MINT SUCCESS! Hash:", hash);
+      alert("Minted successfully! Check explorer.");
 
-  } catch (error: any) {
-    console.error("Mint Error Details:", error);
-    
-    if (error.message.includes('User rejected')) {
-      return;
+    } catch (error: any) {
+      console.error("CRITICAL MINT ERROR:", error);
+      if (error.message.includes('ChainMismatchError') || error.message.includes('chainid')) {
+        alert("Network Sync Error: Please manually select Citrea in your wallet and refresh.");
+      } else {
+        alert(`Error: ${error.shortMessage || "Transaction rejected"}`);
+      }
     }
-    
-    alert(`Ошибка сети: убедитесь, что в кошельке выбрана Citrea. (${error.shortMessage || "Error"})`);
-  }
-};
+  };
 
   const handleShare = async () => {
     const text = `I just reached Level ${level} in Citrea Archery! 🎯\n\nCan you beat my score?\n\n`;
