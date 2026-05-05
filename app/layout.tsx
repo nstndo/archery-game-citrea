@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     siteName: "Citrea Archery",
     images: [
       {
-        url: "/opengraph-img.png?v=4",
+        url: "https://citrea-archery-game.vercel.app/opengraph-img.png?v=5",
         width: 1200,
         height: 630,
         alt: "Citrea Archery",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Citrea Archery",
     description: "Compete in the Citrea Archery Tournament. Mint your score as NFT on Citrea.",
-    images: ["/opengraph-img.png?v=4"],
+    images: ["https://citrea-archery-game.vercel.app/opengraph-img.png?v=5"],
   },
 };
 
