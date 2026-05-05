@@ -14,7 +14,7 @@ import {
   useWalletClient
 } from 'wagmi';
 import { config, citrea } from './Providers'; 
-import { writeContract as wagmiWriteContract } from '@wagmi/core';
+import { writeContract as wagmiWriteContract, getWalletClient } from '@wagmi/core';
 import { encodeFunctionData } from 'viem';
 
 // --- CONFIG ---
@@ -324,57 +324,52 @@ export default function Game() {
     }, 100);
   };
 
-  const handleMint = async () => {
-    // Check connection first using address/isConnected
-    if (!isConnected || !address) {
-      setShowWalletModal(true);
+const handleMint = async () => {
+  if (!isConnected || !address) {
+    setShowWalletModal(true);
+    return;
+  }
+
+  try {
+    if (chainId !== citrea.id) {
+      await switchChainAsync({ chainId: citrea.id });
+      return; // Stop here, user will click again on the right chain
+    }
+
+    // This is the fix for "Wallet client not available"
+    const walletClient = await getWalletClient(config);
+
+    if (!walletClient) {
+      alert("Wallet connection lost. Please reconnect.");
       return;
     }
 
-    try {
-      // 1. Force Network Switch if needed
-      if (chainId !== citrea.id) {
-        console.log("Switching network to Citrea...");
-        await switchChainAsync({ chainId: citrea.id });
-        // Return here so user can click again once wallet is on correct chain
-        return;
-      }
+    const data = encodeFunctionData({
+      abi: CONTRACT_ABI,
+      functionName: 'mintScore',
+      args: [BigInt(level)],
+    });
 
-      // 2. We need walletClient to send the raw transaction
-      if (!walletClient) {
-        console.error("Wallet client not available");
-        return;
-      }
+    const hash = await walletClient.sendTransaction({
+      account: address,
+      to: CONTRACT_ADDRESS as `0x${string}`,
+      data: data,
+      chain: citrea,
+      kzg: undefined
+    });
 
-      // 3. Prepare transaction data
-      const data = encodeFunctionData({
-        abi: CONTRACT_ABI,
-        functionName: 'mintScore',
-        args: [BigInt(level)],
-      });
+    console.log("MINT SUCCESS! Hash:", hash);
+    alert("Transaction sent! Check your wallet.");
 
-      // 4. Direct transaction via walletClient to bypass wagmi safety mismatch blocks
-      const hash = await walletClient.sendTransaction({
-        account: address,
-        to: CONTRACT_ADDRESS as `0x${string}`,
-        data: data,
-        chain: citrea,
-        kzg: undefined
-      });
-
-      console.log("MINT SUCCESS! Hash:", hash);
-      alert("Minted successfully! Transaction sent.");
-
-    } catch (error: any) {
-      console.error("MINT ERROR:", error);
-      if (error.message?.includes('User rejected')) return;
-      
-      alert(`Network Error: Please make sure Citrea is selected in your wallet and try again.`);
-    }
-  };
+  } catch (error: any) {
+    console.error("MINT ERROR:", error);
+    if (error.message?.includes('User rejected')) return;
+    alert(`Error: Make sure Citrea is selected in your wallet.`);
+  }
+};
 
   const handleShare = async () => {
-    const text = `I just reached Level ${level} in Citrea Archery! 🎯\n\nCan you beat my score?\n\n`;
+    const text = `I just reached Level ${level} in Citrea Archery Game! 🎯\n\nCan you beat my score?`;
     const url = 'https://citrea-archery-game.vercel.app';
     const xUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
 
