@@ -65,12 +65,6 @@ export default function Game() {
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
 
-  const { data: hash, isPending, writeContract, reset: resetContract } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ 
-  hash: txHash || hash 
-  });
-  const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
-
   const [level, setLevel] = useState(1);
   const [arrowsLeft, setArrowsLeft] = useState(10);
   const [isGameOver, setIsGameOver] = useState(false);
@@ -83,6 +77,11 @@ export default function Game() {
   const [showWalletModal, setShowWalletModal] = useState(false);
 
   const [isLocalPending, setIsLocalPending] = useState(false);
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
+  const { data: hash, isPending, writeContract, reset: resetContract } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ 
+  hash: txHash || hash 
+  });
 
   const gameState = useRef<'playing' | 'gameover' | 'level_complete' | 'paused'>('playing');
   const stuckArrows = useRef<Arrow[]>([]);
