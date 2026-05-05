@@ -332,13 +332,12 @@ const handleMint = async () => {
 
   try {
     if (chainId !== citrea.id) {
+      console.log("Switching network to Citrea...");
       await switchChainAsync({ chainId: citrea.id });
-      return; // Stop here, user will click again on the right chain
+      return; 
     }
 
-    // This is the fix for "Wallet client not available"
     const walletClient = await getWalletClient(config);
-
     if (!walletClient) {
       alert("Wallet connection lost. Please reconnect.");
       return;
@@ -350,12 +349,12 @@ const handleMint = async () => {
       args: [BigInt(level)],
     });
 
+    console.log("Sending transaction...");
+
     const hash = await walletClient.sendTransaction({
       account: address,
       to: CONTRACT_ADDRESS as `0x${string}`,
       data: data,
-      chain: citrea,
-      kzg: undefined
     });
 
     console.log("MINT SUCCESS! Hash:", hash);
@@ -364,7 +363,12 @@ const handleMint = async () => {
   } catch (error: any) {
     console.error("MINT ERROR:", error);
     if (error.message?.includes('User rejected')) return;
-    alert(`Error: Make sure Citrea is selected in your wallet.`);
+    
+    if (error.message?.includes('ChainMismatchError')) {
+      alert("Network sync error. Please refresh the page and try again.");
+    } else {
+      alert(`Error: ${error.shortMessage || "Transaction failed"}`);
+    }
   }
 };
 
