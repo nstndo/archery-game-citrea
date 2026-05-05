@@ -490,7 +490,7 @@ const handleMint = async () => {
                       }`}
                     >
                       {connector.id === 'injected' 
-                        ? 'Browser Wallet (Rabby, MM, etc.)' 
+                        ? 'Browser Wallet' 
                         : 'WalletConnect'}
                     </button>
                   ))}
