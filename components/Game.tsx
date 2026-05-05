@@ -66,7 +66,10 @@ export default function Game() {
   const { data: walletClient } = useWalletClient();
 
   const { data: hash, isPending, writeContract, reset: resetContract } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ 
+  hash: txHash || hash 
+  });
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
 
   const [level, setLevel] = useState(1);
   const [arrowsLeft, setArrowsLeft] = useState(10);
@@ -318,6 +321,7 @@ export default function Game() {
 
   const resetLevel = (lvl: number) => {
     if (resetContract) resetContract();
+    setTxHash(undefined);
     setIsGameOver(false); setIsLevelComplete(false);
     setTimeout(() => {
       setLevel(lvl); setArrowsLeft(10); arrowsLeftRef.current = 10;
@@ -336,7 +340,7 @@ export default function Game() {
   if (!provider) return;
 
   try {
-    setIsLocalPending(true); // <--- START LOADING
+    setIsLocalPending(true);
 
     await provider.request({
       method: 'wallet_switchEthereumChain',
@@ -356,21 +360,18 @@ export default function Game() {
       chainId: '0x1012',
     };
 
-    const txHash = await provider.request({
+    const hashResponse = await provider.request({
       method: 'eth_sendTransaction',
       params: [transactionParameters],
     });
     
-    console.log("Transaction sent:", txHash);
-    // Note: isConfirming and isConfirmed from useWaitForTransactionReceipt(hash) 
-    // will work only if you set the hash. But for simplicity, we can just manage state.
+    setTxHash(hashResponse as `0x${string}`);
+    console.log("Transaction hash saved:", hashResponse);
 
   } catch (error: any) {
     console.error("MINT ERROR:", error);
-    setIsLocalPending(false); // <--- STOP LOADING ON ERROR
+    setIsLocalPending(false);
   } finally {
-    // We don't set isLocalPending to false here because we want to wait for the block
-    // If you want the button to unlock after the signature, do it here.
     setIsLocalPending(false); 
   }
 };
@@ -379,7 +380,7 @@ export default function Game() {
     const text = `I just reached Level ${level} in Citrea Archery! 🎯\n\nCan you beat my score?\n\n`;
     const url = 'https://citrea-archery-game.vercel.app';
 
-    const xUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+    const xUrl = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
 
     window.open(xUrl, '_blank', 'noopener,noreferrer');
   };
