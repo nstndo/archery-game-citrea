@@ -337,27 +337,46 @@ export default function Game() {
     }, 100);
   };
 
+const { switchChainAsync } = useSwitchChain(); // Добавь async версию хука в начало компонента
+
 const handleMint = async () => {
-  if (!isConnected) { setShowWalletModal(true); return; }
+  if (!isConnected) {
+    setShowWalletModal(true);
+    return;
+  }
 
   try {
     if (chainId !== citrea.id) {
-      await switchChain({ chainId: citrea.id });
-      return; 
+      console.log("Wrong chain detected. Switching to Citrea...");
+      try {
+        await switchChainAsync({ chainId: citrea.id });
+        return; 
+      } catch (switchError) {
+        console.error("User rejected chain switch", switchError);
+        alert("Please switch to Citrea Mainnet in your wallet to mint.");
+        return;
+      }
     }
 
-    await wagmiWriteContract(config, {
+    console.log("Correct chain. Executing mint...");
+    
+    const hash = await wagmiWriteContract(config, {
       chainId: citrea.id,
       address: CONTRACT_ADDRESS,
       abi: CONTRACT_ABI,
       functionName: 'mintScore',
       args: [BigInt(level)],
     });
+    
+    console.log("Transaction sent! Hash:", hash);
 
   } catch (error: any) {
-    console.error("Mint Error:", error);
-    if (error.message.includes('Chain mismatch')) {
-      alert("Please switch your wallet to Citrea Mainnet");
+    console.error("Mint Error Details:", error);
+    
+    if (error.message.includes('ChainMismatchError')) {
+      alert("Wallet network sync error. Please refresh the page and try again.");
+    } else {
+      alert(`Error: ${error.shortMessage || "Transaction failed"}`);
     }
   }
 };
