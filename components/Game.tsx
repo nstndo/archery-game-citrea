@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain, usePublicClient } from 'wagmi';
 import { defineChain } from 'viem';
+import { config, citrea } from './Providers';
+import { writeContract as wagmiWriteContract } from '@wagmi/core';
 
 // --- CONFIG ---
 const CHAIN_ID = 4114;
@@ -335,62 +337,30 @@ export default function Game() {
     }, 100);
   };
 
-  const handleMint = async () => {
-    if (!isConnected) { 
-      setShowWalletModal(true); 
+const handleMint = async () => {
+  if (!isConnected) { setShowWalletModal(true); return; }
+
+  try {
+    if (chainId !== citrea.id) {
+      await switchChain({ chainId: citrea.id });
       return; 
     }
 
-    if (chainId !== citrea.id) {
-      try {
-        await switchChain({ chainId: citrea.id });
-        setShouldMint(true);
-      } catch (e) {
-        if (typeof window !== 'undefined' && (window as any).ethereum) {
-          try {
-            await (window as any).ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: `0x${citrea.id.toString(16)}` }],
-            });
-            setShouldMint(true);
-          } catch (switchError: any) {
-            if (switchError.code === 4902) {
-              try {
-                await (window as any).ethereum.request({
-                  method: 'wallet_addEthereumChain',
-                  params: [
-                    {
-                      chainId: `0x${citrea.id.toString(16)}`,
-                      chainName: citrea.name,
-                      nativeCurrency: citrea.nativeCurrency,
-                      rpcUrls: citrea.rpcUrls.default.http,
-                      blockExplorerUrls: [citrea.blockExplorers.default.url],
-                    },
-                  ],
-                });
-                setShouldMint(true);
-              } catch (addError) {
-                alert("Please add Citrea Mainnet to your wallet.");
-              }
-            }
-          }
-        }
-      }
-      return;
-    }
+    await wagmiWriteContract(config, {
+      chainId: citrea.id,
+      address: CONTRACT_ADDRESS,
+      abi: CONTRACT_ABI,
+      functionName: 'mintScore',
+      args: [BigInt(level)],
+    });
 
-    try {
-      writeContract({ 
-        address: CONTRACT_ADDRESS, 
-        abi: CONTRACT_ABI, 
-        functionName: 'mintScore', 
-        args: [BigInt(level)],
-        chain: citrea, // Оставляем для viem
-      });
-    } catch (error) {
-      console.error("Mint failed:", error);
+  } catch (error: any) {
+    console.error("Mint Error:", error);
+    if (error.message.includes('Chain mismatch')) {
+      alert("Please switch your wallet to Citrea Mainnet");
     }
-  };
+  }
+};
 
   const handleShare = async () => {
     const text = `I just reached Level ${level} in Citrea Archery! 🎯\n\nCan you beat my score?\n\n`;
