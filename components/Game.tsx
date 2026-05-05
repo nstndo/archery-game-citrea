@@ -324,75 +324,64 @@ export default function Game() {
     }, 100);
   };
 
-const handleMint = async () => {
-  if (!isConnected || !address) {
-    setShowWalletModal(true);
-    return;
-  }
-
-  const provider = (window as any).ethereum;
-  if (!provider) {
-    alert("Wallet provider not found");
-    return;
-  }
-
-  try {
-    console.log("Forcing network switch via RPC...");
-    
-    await provider.request({
-      method: 'wallet_switchEthereumChain',
-      params: [{ chainId: '0x1012' }],
-    });
-
-    const data = encodeFunctionData({
-      abi: CONTRACT_ABI,
-      functionName: 'mintScore',
-      args: [BigInt(level)],
-    });
-
-    console.log("Sending raw transaction...");
-
-    const transactionParameters = {
-      to: CONTRACT_ADDRESS,
-      from: address,
-      data: data,
-      chainId: '0x1012', // Citrea Mainnet
-    };
-
-    const txHash = await provider.request({
-      method: 'eth_sendTransaction',
-      params: [transactionParameters],
-    });
-
-    console.log("MINT SUCCESS! Hash:", txHash);
-    alert("Transaction sent successfully!");
-
-  } catch (error: any) {
-    console.error("MINT ERROR:", error);
-
-    if (error.code === 4902) {
-      try {
-        await provider.request({
-          method: 'wallet_addEthereumChain',
-          params: [{
-            chainId: '0x1012',
-            chainName: 'Citrea Mainnet',
-            nativeCurrency: { name: 'cBTC', symbol: 'cBTC', decimals: 18 },
-            rpcUrls: ['https://rpc.mainnet.citrea.xyz'],
-            blockExplorerUrls: ['https://explorer.mainnet.citrea.xyz']
-          }]
-        });
-        handleMint();
-      } catch (addError) {
-        alert("Please add Citrea Mainnet to your wallet.");
-      }
-    } else if (error.message?.includes('User rejected')) {
-      return; 
-    } else {
-      alert(`Mint failed: ${error.message || "Unknown error"}`);
+  const handleMint = async () => {
+    if (!isConnected || !address) {
+      setShowWalletModal(true);
+      return;
     }
-  }
-};
+
+    const provider = (window as any).ethereum;
+    if (!provider) return;
+
+    try {
+      await provider.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x1012' }],
+      });
+
+      const data = encodeFunctionData({
+        abi: CONTRACT_ABI,
+        functionName: 'mintScore',
+        args: [BigInt(level)],
+      });
+
+      const transactionParameters = {
+        to: CONTRACT_ADDRESS,
+        from: address,
+        data: data,
+        chainId: '0x1012',
+      };
+
+      // We use the hash from here to let useWaitForTransactionReceipt track it
+      const txHash = await provider.request({
+        method: 'eth_sendTransaction',
+        params: [transactionParameters],
+      });
+      
+      console.log("Transaction sent:", txHash);
+      // No more alerts here!
+
+    } catch (error: any) {
+      console.error("MINT ERROR:", error);
+      if (error.code === 4902) {
+        try {
+          await provider.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0x1012',
+              chainName: 'Citrea Mainnet',
+              nativeCurrency: { name: 'cBTC', symbol: 'cBTC', decimals: 18 },
+              rpcUrls: ['https://rpc.mainnet.citrea.xyz'],
+              blockExplorerUrls: ['https://explorer.mainnet.citrea.xyz']
+            }]
+          });
+          handleMint();
+        } catch (addError) {
+          console.error("Failed to add chain");
+        }
+      }
+    }
+  };
 
   const handleShare = async () => {
     const text = `I just reached Level ${level} in Citrea Archery Game! 🎯\n\nCan you beat my score?`;
@@ -514,7 +503,13 @@ const handleMint = async () => {
                 <div className="text-6xl font-black font-orbitron text-[#f17c19]">{level}</div>
               </div>
               <div className="flex gap-3 mb-3">
-                <button onClick={handleMint} className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase bg-[#f17c19] text-white tracking-widest">MINT NFT</button>
+                <button 
+                  onClick={handleMint} 
+                  disabled={isPending || isConfirming || isConfirmed} 
+                  className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase bg-[#f17c19] text-white disabled:opacity-50 tracking-widest"
+                >
+                  {isConfirmed ? 'MINTED!' : isConfirming ? 'MINTING...' : 'MINT NFT'}
+                </button>
                 <button onClick={handleShare} className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase bg-[#f17c19] text-white tracking-widest">SHARE</button>
               </div>
               <button onClick={() => resetLevel(1)} className={`w-full p-4 rounded-2xl font-bold font-orbitron text-base uppercase border ${currentTheme === 'light' ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-white/5 text-gray-400 border-white/10'}`}>TRY AGAIN</button>
