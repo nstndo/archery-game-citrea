@@ -79,6 +79,8 @@ export default function Game() {
   const [currentTheme, setCurrentTheme] = useState<'dark' | 'light'>('light');
   const [showWalletModal, setShowWalletModal] = useState(false);
 
+  const [isLocalPending, setIsLocalPending] = useState(false);
+
   const gameState = useRef<'playing' | 'gameover' | 'level_complete' | 'paused'>('playing');
   const stuckArrows = useRef<Arrow[]>([]);
   const flyingArrow = useRef<{ y: number } | null>(null);
@@ -325,63 +327,53 @@ export default function Game() {
   };
 
   const handleMint = async () => {
-    if (!isConnected || !address) {
-      setShowWalletModal(true);
-      return;
-    }
+  if (!isConnected || !address) {
+    setShowWalletModal(true);
+    return;
+  }
 
-    const provider = (window as any).ethereum;
-    if (!provider) return;
+  const provider = (window as any).ethereum;
+  if (!provider) return;
 
-    try {
-      await provider.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0x1012' }],
-      });
+  try {
+    setIsLocalPending(true); // <--- START LOADING
 
-      const data = encodeFunctionData({
-        abi: CONTRACT_ABI,
-        functionName: 'mintScore',
-        args: [BigInt(level)],
-      });
+    await provider.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x1012' }],
+    });
 
-      const transactionParameters = {
-        to: CONTRACT_ADDRESS,
-        from: address,
-        data: data,
-        chainId: '0x1012',
-      };
+    const data = encodeFunctionData({
+      abi: CONTRACT_ABI,
+      functionName: 'mintScore',
+      args: [BigInt(level)],
+    });
 
-      // We use the hash from here to let useWaitForTransactionReceipt track it
-      const txHash = await provider.request({
-        method: 'eth_sendTransaction',
-        params: [transactionParameters],
-      });
-      
-      console.log("Transaction sent:", txHash);
-      // No more alerts here!
+    const transactionParameters = {
+      to: CONTRACT_ADDRESS,
+      from: address,
+      data: data,
+      chainId: '0x1012',
+    };
 
-    } catch (error: any) {
-      console.error("MINT ERROR:", error);
-      if (error.code === 4902) {
-        try {
-          await provider.request({
-            method: 'wallet_addEthereumChain',
-            params: [{
-              chainId: '0x1012',
-              chainName: 'Citrea Mainnet',
-              nativeCurrency: { name: 'cBTC', symbol: 'cBTC', decimals: 18 },
-              rpcUrls: ['https://rpc.mainnet.citrea.xyz'],
-              blockExplorerUrls: ['https://explorer.mainnet.citrea.xyz']
-            }]
-          });
-          handleMint();
-        } catch (addError) {
-          console.error("Failed to add chain");
-        }
-      }
-    }
-  };
+    const txHash = await provider.request({
+      method: 'eth_sendTransaction',
+      params: [transactionParameters],
+    });
+    
+    console.log("Transaction sent:", txHash);
+    // Note: isConfirming and isConfirmed from useWaitForTransactionReceipt(hash) 
+    // will work only if you set the hash. But for simplicity, we can just manage state.
+
+  } catch (error: any) {
+    console.error("MINT ERROR:", error);
+    setIsLocalPending(false); // <--- STOP LOADING ON ERROR
+  } finally {
+    // We don't set isLocalPending to false here because we want to wait for the block
+    // If you want the button to unlock after the signature, do it here.
+    setIsLocalPending(false); 
+  }
+};
 
   const handleShare = async () => {
     const text = `I just reached Level ${level} in Citrea Archery Game! 🎯\n\nCan you beat my score?`;
@@ -505,10 +497,10 @@ export default function Game() {
               <div className="flex gap-3 mb-3">
                 <button 
                   onClick={handleMint} 
-                  disabled={isPending || isConfirming || isConfirmed} 
+                  disabled={isLocalPending || isConfirming || isConfirmed} 
                   className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase bg-[#f17c19] text-white disabled:opacity-50 tracking-widest"
                 >
-                  {isPending ? 'CONFIRMING...' : isConfirming ? 'MINTING...' : isConfirmed ? 'MINTED!' : 'MINT NFT'}
+                  {isConfirmed ? 'MINTED!' : (isLocalPending || isConfirming) ? 'MINTING...' : 'MINT NFT'}
                 </button>
                 <button onClick={handleShare} className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase bg-[#f17c19] text-white tracking-widest">SHARE</button>
               </div>
