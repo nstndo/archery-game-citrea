@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Citrea Archery",
     description: "Compete in the Citrea Archery Tournament.",
-    images: [`${APP_URL}/opengraph-img.png`],
+    images: [`https://citrea-archery-game.vercel.app/opengraph-img.png`],
   },
 };
 
