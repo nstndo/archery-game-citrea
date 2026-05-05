@@ -1,23 +1,23 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain, usePublicClient } from 'wagmi';
-import { defineChain } from 'viem';
-import { config, citrea } from './Providers';
+import { 
+  useAccount, 
+  useConnect, 
+  useDisconnect, 
+  useWriteContract, 
+  useWaitForTransactionReceipt, 
+  useChainId, 
+  useSwitchChain, 
+  usePublicClient,
+  useConfig
+} from 'wagmi';
+import { config, citrea } from './Providers'; 
 import { writeContract as wagmiWriteContract } from '@wagmi/core';
 
 // --- CONFIG ---
-const CHAIN_ID = 4114;
 const CONTRACT_ADDRESS = "0x7a98360c0Eb052a2B3A98b06a6cd4069582ff84D";
 const EXPLORER_URL = "https://explorer.mainnet.citrea.xyz";
-
-const citrea = defineChain({
-  id: CHAIN_ID,
-  name: 'Citrea Mainnet',
-  nativeCurrency: { name: 'cBTC', symbol: 'cBTC', decimals: 18 },
-  rpcUrls: { default: { http: ['https://rpc.mainnet.citrea.xyz'] } },
-  blockExplorers: { default: { name: 'Explorer', url: EXPLORER_URL } },
-});
 
 const CONTRACT_ABI = [
   {
