@@ -325,34 +325,35 @@ export default function Game() {
   };
 
   const handleMint = async () => {
-  if (!isConnected) {
-    setShowWalletModal(true);
-    return;
-  }
-
-  if (!walletClient) {
-    console.log("Waiting for wallet client...");
-    alert("Wallet is initializing. Please try again in a moment.");
-    return;
-  }
+    // Check connection first using address/isConnected
+    if (!isConnected || !address) {
+      setShowWalletModal(true);
+      return;
+    }
 
     try {
-      // 1. Force network switch using walletClient directly to bypass internal cache mismatches
-      try {
-        await walletClient.switchChain({ id: citrea.id });
-      } catch (switchError) {
-        // Continue if user already switched or if switch fails (it will error later if wrong)
+      // 1. Force Network Switch if needed
+      if (chainId !== citrea.id) {
+        console.log("Switching network to Citrea...");
+        await switchChainAsync({ chainId: citrea.id });
+        // Return here so user can click again once wallet is on correct chain
+        return;
       }
 
-      // 2. Prepare calldata
+      // 2. We need walletClient to send the raw transaction
+      if (!walletClient) {
+        console.error("Wallet client not available");
+        return;
+      }
+
+      // 3. Prepare transaction data
       const data = encodeFunctionData({
         abi: CONTRACT_ABI,
         functionName: 'mintScore',
         args: [BigInt(level)],
       });
 
-      // 3. Send raw transaction via walletClient
-      // This bypasses wagmi's useWriteContract safety checks that trigger ChainMismatchError
+      // 4. Direct transaction via walletClient to bypass wagmi safety mismatch blocks
       const hash = await walletClient.sendTransaction({
         account: address,
         to: CONTRACT_ADDRESS as `0x${string}`,
@@ -362,15 +363,13 @@ export default function Game() {
       });
 
       console.log("MINT SUCCESS! Hash:", hash);
-      alert("Minted successfully! Check explorer.");
+      alert("Minted successfully! Transaction sent.");
 
     } catch (error: any) {
-      console.error("CRITICAL MINT ERROR:", error);
-      if (error.message.includes('ChainMismatchError') || error.message.includes('chainid')) {
-        alert("Network Sync Error: Please manually select Citrea in your wallet and refresh.");
-      } else {
-        alert(`Error: ${error.shortMessage || "Transaction rejected"}`);
-      }
+      console.error("MINT ERROR:", error);
+      if (error.message?.includes('User rejected')) return;
+      
+      alert(`Network Error: Please make sure Citrea is selected in your wallet and try again.`);
     }
   };
 
@@ -494,7 +493,7 @@ export default function Game() {
                 <div className="text-6xl font-black font-orbitron text-[#f17c19]">{level}</div>
               </div>
               <div className="flex gap-3 mb-3">
-                <button onClick={handleMint} disabled={isPending || isConfirming || isConfirmed} className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase bg-[#f17c19] text-white disabled:opacity-50 tracking-widest">{isPending ? 'CONFIRMING...' : isConfirming ? 'MINTING...' : isConfirmed ? 'MINTED!' : 'MINT NFT'}</button>
+                <button onClick={handleMint} className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase bg-[#f17c19] text-white tracking-widest">MINT NFT</button>
                 <button onClick={handleShare} className="flex-1 p-4 rounded-2xl font-bold font-orbitron text-base uppercase bg-[#f17c19] text-white tracking-widest">SHARE</button>
               </div>
               <button onClick={() => resetLevel(1)} className={`w-full p-4 rounded-2xl font-bold font-orbitron text-base uppercase border ${currentTheme === 'light' ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-white/5 text-gray-400 border-white/10'}`}>TRY AGAIN</button>
