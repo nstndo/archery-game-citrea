@@ -399,7 +399,7 @@ export default function Game() {
 
   return (
     <div ref={containerRef} className="relative w-full h-screen overflow-hidden max-w-[600px] mx-auto" onPointerDown={handlePointerDown}
-      style={{ touchAction: 'none', background: currentTheme === 'dark' ? 'linear-gradient(180deg, #000000 0%, #1a1a2e 100%)' : 'linear-gradient(180deg, #ffffff 0%, #fff5e6 100%)' }}>
+      style={{ touchAction: 'none', background: currentTheme === 'dark' ? 'linear-gradient(180deg, #000000 0%, #14100d 100%)' : 'linear-gradient(180deg, #ffffff 0%, #fff5e6 100%)' }}>
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ touchAction: 'none' }} />
 
       <div className="absolute inset-0 pointer-events-none flex flex-col" style={{ zIndex: 10 }}>
