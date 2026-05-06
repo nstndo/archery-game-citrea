@@ -28,7 +28,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Citrea Archery",
     description: "Compete in the Citrea Archery Tournament.",
-    images: [`${APP_URL}/citrea-archery-game.png`],
+    images: [
+      {
+        url: `${APP_URL}/citrea-archery-game.png`,
+        width: 1200,
+        height: 630,
+        alt: "Citrea Archery Game",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
