@@ -30,6 +30,12 @@ export const metadata: Metadata = {
     description: "Compete in the Citrea Archery Tournament.",
     images: [`${APP_URL}/citrea-archery-game.png`],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Citrea Archery",
+    description: "Compete in the Citrea Archery Tournament.",
+    images: [`${APP_URL}/citrea-archery-game.png`],
+  },
 };
 
 export default function RootLayout({
